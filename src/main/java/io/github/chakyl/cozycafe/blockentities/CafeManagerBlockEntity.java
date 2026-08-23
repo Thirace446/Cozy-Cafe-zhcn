@@ -379,14 +379,22 @@ public class CafeManagerBlockEntity extends BlockEntity implements MenuProvider 
         }
         return false;
     }
-    public boolean onlyHasDesserts() {
+
+    public boolean onlyHasCategory(CafeMenuItem.MenuItemCategory category) {
         for (ItemStack menuItem : this.menu) {
-            if (CafeMenuItemRegistry.INSTANCE.getForItem(menuItem.getItem()).category() != CafeMenuItem.MenuItemCategory.DESSERT)
+            if (CafeMenuItemRegistry.INSTANCE.getForItem(menuItem.getItem()).category() != category)
                 return false;
         }
         return true;
     }
 
+    public boolean hasMenuCategory(CafeMenuItem.MenuItemCategory category) {
+        for (ItemStack menuItem : this.menu) {
+            if (CafeMenuItemRegistry.INSTANCE.getForItem(menuItem.getItem()).category() == category)
+                return true;
+        }
+        return false;
+    }
     public void sortMenuByCategory() {
         this.menu.sort(comparingInt(item -> {
             CafeMenuItem.MenuItemCategory category = CafeMenuItemRegistry.INSTANCE.getForItem(item.getItem()).category();
@@ -515,4 +523,5 @@ public class CafeManagerBlockEntity extends BlockEntity implements MenuProvider 
             this.load(tag);
         }
     }
+
 }

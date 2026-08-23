@@ -34,7 +34,6 @@ import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
@@ -98,21 +97,23 @@ public class CafeMenuBlockEntity extends BlockEntity {
                         boolean shouldClose = this.currentCourse > 2 || !this.orderedDessert(this.currentCourse) || this.currentCourse == 1 && (!cafeManagerBlockEntity.hasFoodType(CafeMenuItem.MenuItemCategory.MAIN) && !cafeManagerBlockEntity.hasFoodType(CafeMenuItem.MenuItemCategory.DESSERT));
                         if (!shouldClose) cafeManagerBlockEntity.rollMenuCourse(this);
                         this.orderTime = -1;
-                        if (this.currentCourse == 2) {
-                            if (!this.droppedItem.isEmpty()) {
+                        if (this.hasMains()) {
+                            if (this.currentCourse == 2) {
+                                if (!this.droppedItem.isEmpty()) {
+                                    pLevel.addFreshEntity(new ItemEntity(pLevel, pPos.getX() + 0.5, pPos.getY() + 0.5, pPos.getZ() + 0.5, this.droppedItem));
+                                    this.droppedItem = ItemStack.EMPTY;
+                                    this.level.setBlock(this.worldPosition, pState.setValue(CafeMenuBlock.DISH, false), 3);
+                                } else {
+                                    if (CozyCafe.CONFIG.platingRequired.get()) {
+                                        this.level.setBlock(this.worldPosition, pState.setValue(CafeMenuBlock.DIRTY, true), 3);
+                                    } else {
+                                        this.level.setBlock(this.worldPosition, pState.setValue(CafeMenuBlock.DISH, false), 3);
+                                    }
+                                }
+                            } else if (currentCourse == 1 && !this.droppedItem.isEmpty()) {
                                 pLevel.addFreshEntity(new ItemEntity(pLevel, pPos.getX() + 0.5, pPos.getY() + 0.5, pPos.getZ() + 0.5, this.droppedItem));
                                 this.droppedItem = ItemStack.EMPTY;
-                                this.level.setBlock(this.worldPosition, pState.setValue(CafeMenuBlock.DISH, false), 3);
-                            } else {
-                                if (CozyCafe.CONFIG.platingRequired.get()) {
-                                    this.level.setBlock(this.worldPosition, pState.setValue(CafeMenuBlock.DIRTY, true), 3);
-                                } else {
-                                    this.level.setBlock(this.worldPosition, pState.setValue(CafeMenuBlock.DISH, false), 3);
-                                }
                             }
-                        } else if (currentCourse == 1 && !this.droppedItem.isEmpty()) {
-                            pLevel.addFreshEntity(new ItemEntity(pLevel, pPos.getX() + 0.5, pPos.getY() + 0.5, pPos.getZ() + 0.5, this.droppedItem));
-                            this.droppedItem = ItemStack.EMPTY;
                         }
                         if (shouldClose) {
                             this.closeMenu(true);
@@ -274,10 +275,18 @@ public class CafeMenuBlockEntity extends BlockEntity {
         if (currentCourse != 2) return true;
         CafeManagerBlockEntity cafeManagerBlockEntity = this.getCafeManager(this.level);
         if (cafeManagerBlockEntity != null && !cafeManagerBlockEntity.hasFoodType(CafeMenuItem.MenuItemCategory.DESSERT)) return false;
-        if (cafeManagerBlockEntity != null && cafeManagerBlockEntity.onlyHasDesserts()) {
+        if (cafeManagerBlockEntity != null && cafeManagerBlockEntity.onlyHasCategory(CafeMenuItem.MenuItemCategory.DESSERT)) {
             return true;
         }
         return Math.random() < CozyCafe.CONFIG.dessertChance.get();
+    }
+
+    public boolean hasMains() {
+        CafeManagerBlockEntity cafeManagerBlockEntity = this.getCafeManager(this.level);
+        if (cafeManagerBlockEntity != null ) {
+            return cafeManagerBlockEntity.hasMenuCategory(CafeMenuItem.MenuItemCategory.MAIN);
+        }
+        return false;
     }
 
     public void setCurrentCourse(int currentCourse, boolean setPlate) {
