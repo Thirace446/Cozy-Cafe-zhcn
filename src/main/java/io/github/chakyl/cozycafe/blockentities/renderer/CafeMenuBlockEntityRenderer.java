@@ -86,7 +86,7 @@ public class CafeMenuBlockEntityRenderer implements BlockEntityRenderer<CafeMenu
                 poseStack.translate(0.5f, 0.1f, 0.5f);
                 poseStack.mulPose(Axis.YP.rotationDegrees(-facing.toYRot()));
                 poseStack.scale(foodSize, foodSize, foodSize);
-            } else if (blockEntity.getCurrentCourse() == 0 + 1) {
+            } else  {
                 // Drink
                 poseStack.translate(
                         0.45f + (facing.getStepX() * 0.35f) + (facing.getClockWise().getStepX() * 0.3f),
@@ -102,12 +102,6 @@ public class CafeMenuBlockEntityRenderer implements BlockEntityRenderer<CafeMenu
                 }
 
                 poseStack.scale(foodSize * 0.65f, foodSize *  0.65f, foodSize *  0.65f);
-            } else {
-                // Dessert
-                // TODO: figure out wtf to do here
-                poseStack.translate(0.5f, 0f, 0.5f);
-                poseStack.mulPose(Axis.YP.rotationDegrees(-facing.toYRot()));
-                poseStack.scale(foodSize, foodSize, foodSize);
             }
 
 
