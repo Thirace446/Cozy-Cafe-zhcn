@@ -20,6 +20,7 @@ import net.minecraftforge.client.model.data.ModelData;
 import javax.annotation.Nullable;
 
 public class GeneralUtils {
+
     public static int getDay(Level level) {
         return (int) (Math.floor((double) level.dayTime() / 24000) + 1);
     }
