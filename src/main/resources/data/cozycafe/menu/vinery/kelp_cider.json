@@ -1,7 +1,7 @@
 {
-	"conditions": [
+	"neoforge:conditions": [
 		{
-			"type": "forge:mod_loaded",
+			"type": "neoforge:mod_loaded",
 			"modid": "vinery"
 		}
 	],
@@ -10,7 +10,7 @@
 	"price": 64,
 	"product_type": "artisan",
 	"flavors": [],
-	"themes": [,
+	"themes": [],
 	"bottle_drink": true,
 	"bottle": "vinery:wine_bottle"
 }

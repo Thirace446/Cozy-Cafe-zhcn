@@ -2,9 +2,9 @@ package io.github.chakyl.cozycafe.blockentities.renderer;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
+import io.github.chakyl.cozycafe.CozyRegistry;
 import io.github.chakyl.cozycafe.blockentities.PlatingStationBlockEntity;
 import io.github.chakyl.cozycafe.item.ServingPlateItem;
-import io.github.chakyl.cozycafe.registry.CozyRegistry;
 import io.github.chakyl.cozycafe.util.GeneralUtils;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;

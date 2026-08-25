@@ -1,34 +1,36 @@
 package io.github.chakyl.cozycafe.network;
 
 import io.github.chakyl.cozycafe.gui.MenuSelectorMenu;
-import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.ByteBufCodecs;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraftforge.network.NetworkEvent;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
 
-import java.util.function.Supplier;
+import static io.github.chakyl.cozycafe.CozyCafe.loc;
 
-public class ServerBoundRemoveMenuItemPacket {
-    int index;
+public record ServerBoundRemoveMenuItemPacket(int index) implements CustomPacketPayload {
+    public static final Type<ServerBoundRemoveMenuItemPacket> TYPE = new Type<>(loc("remove_menu_item"));
 
-    public ServerBoundRemoveMenuItemPacket(int index) {
-        this.index = index;
+    public static final StreamCodec<RegistryFriendlyByteBuf, ServerBoundRemoveMenuItemPacket> STREAM_CODEC = StreamCodec.composite(
+            ByteBufCodecs.INT,
+            ServerBoundRemoveMenuItemPacket::index,
+            ServerBoundRemoveMenuItemPacket::new
+    );
+
+    @Override
+    public Type<? extends CustomPacketPayload> type() {
+        return TYPE;
     }
 
-    public ServerBoundRemoveMenuItemPacket(FriendlyByteBuf buffer) {
-        this.index = buffer.readInt();
+    public static void handle(ServerBoundRemoveMenuItemPacket packet, IPayloadContext context) {
+        context.enqueueWork(() -> {
+            if (context.player() instanceof ServerPlayer player) {
+                if (player.containerMenu instanceof MenuSelectorMenu serverMenu) {
+                    serverMenu.removeFromMenu(packet.index());
+                }
+            }
+        });
     }
-
-    public void encode(FriendlyByteBuf buffer) {
-        buffer.writeInt(this.index);
-    }
-
-    public void handle(Supplier<NetworkEvent.Context> context) {
-        ServerPlayer player = context.get().getSender();
-        if (player == null) return;
-        if (player.containerMenu instanceof MenuSelectorMenu serverMenu) {
-            serverMenu.removeFromMenu(this.index);
-        }
-        context.get().setPacketHandled(true);
-    }
-
 }

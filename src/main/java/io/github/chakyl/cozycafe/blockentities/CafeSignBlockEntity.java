@@ -1,9 +1,10 @@
 package io.github.chakyl.cozycafe.blockentities;
 
-import io.github.chakyl.cozycafe.registry.CozyRegistry;
+import io.github.chakyl.cozycafe.CozyRegistry;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.NbtUtils;
+import net.minecraft.nbt.NbtOps;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
@@ -38,18 +39,20 @@ public class CafeSignBlockEntity extends BlockEntity {
     }
 
     @Override
-    protected void saveAdditional(CompoundTag nbt) {
-        super.saveAdditional(nbt);
+    protected void saveAdditional(CompoundTag nbt, HolderLookup.Provider provider) {
+        super.saveAdditional(nbt, provider);
         if (this.linkedManager != null) {
-            nbt.put("linkedManager", NbtUtils.writeBlockPos(this.linkedManager));
+            BlockPos.CODEC.encodeStart(NbtOps.INSTANCE, this.linkedManager).result().ifPresent(tag -> nbt.put("linkedManager", tag));
         }
     }
 
     @Override
-    public void load(CompoundTag nbt) {
-        super.load(nbt);
+    protected void loadAdditional(CompoundTag nbt, HolderLookup.Provider provider) {
+        super.loadAdditional(nbt, provider);
         if (nbt.contains("linkedManager")) {
-            this.linkedManager = NbtUtils.readBlockPos(nbt.getCompound("linkedManager"));
+            BlockPos.CODEC.parse(NbtOps.INSTANCE, nbt.get("linkedManager")).result().ifPresent(pos -> this.linkedManager = pos);
+        } else {
+            this.linkedManager = null;
         }
     }
 
@@ -60,16 +63,15 @@ public class CafeSignBlockEntity extends BlockEntity {
     }
 
     @Override
-    public CompoundTag getUpdateTag() {
+    public CompoundTag getUpdateTag(HolderLookup.Provider provider) {
         CompoundTag tag = new CompoundTag();
-        this.saveAdditional(tag);
+        this.saveAdditional(tag, provider);
         return tag;
     }
 
     @Override
-    public void handleUpdateTag(CompoundTag tag) {
-        super.handleUpdateTag(tag);
-        this.load(tag);
-
+    public void handleUpdateTag(CompoundTag tag, HolderLookup.Provider provider) {
+        super.handleUpdateTag(tag, provider);
+        this.loadAdditional(tag, provider);
     }
 }

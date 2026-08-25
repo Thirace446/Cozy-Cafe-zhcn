@@ -1,35 +1,35 @@
 package io.github.chakyl.cozycafe;
 
-import net.minecraftforge.common.ForgeConfigSpec;
+import net.neoforged.neoforge.common.ModConfigSpec;
 
 import java.util.Arrays;
 import java.util.List;
 
 public class CozyConfig {
 
-    public final ForgeConfigSpec.IntValue menuSizePerStar;
-    public final ForgeConfigSpec.IntValue customerSpawnInterval;
-    public final ForgeConfigSpec.DoubleValue groupCustomerChance;
-    public final ForgeConfigSpec.DoubleValue dessertChance;
-    public final ForgeConfigSpec.IntValue customerWaitTime;
-    public final ForgeConfigSpec.IntValue customerOrderTime;
-    public final ForgeConfigSpec.ConfigValue<List<? extends String>> customerUsernames;
+    public final ModConfigSpec.IntValue menuSizePerStar;
+    public final ModConfigSpec.IntValue customerSpawnInterval;
+    public final ModConfigSpec.DoubleValue groupCustomerChance;
+    public final ModConfigSpec.DoubleValue dessertChance;
+    public final ModConfigSpec.IntValue customerWaitTime;
+    public final ModConfigSpec.IntValue customerOrderTime;
+    public final ModConfigSpec.ConfigValue<List<? extends String>> customerUsernames;
 
-    public final ForgeConfigSpec.ConfigValue<String> currency_1;
-    public final ForgeConfigSpec.ConfigValue<String> currency_8;
-    public final ForgeConfigSpec.ConfigValue<String> currency_16;
-    public final ForgeConfigSpec.ConfigValue<String> currency_64;
-    public final ForgeConfigSpec.ConfigValue<String> currency_512;
-    public final ForgeConfigSpec.ConfigValue<String> currency_4096;
+    public final ModConfigSpec.ConfigValue<String> currency_1;
+    public final ModConfigSpec.ConfigValue<String> currency_8;
+    public final ModConfigSpec.ConfigValue<String> currency_16;
+    public final ModConfigSpec.ConfigValue<String> currency_64;
+    public final ModConfigSpec.ConfigValue<String> currency_512;
+    public final ModConfigSpec.ConfigValue<String> currency_4096;
 
-    public final ForgeConfigSpec.BooleanValue numismaticsUtilsPayment;
-    public final ForgeConfigSpec.BooleanValue dailyLimit;
-    public final ForgeConfigSpec.BooleanValue platingRequired;
-    public final ForgeConfigSpec.BooleanValue dynamicMenuItems;
-    public final ForgeConfigSpec.ConfigValue<String> quality_bonus_stage;
-    public final ForgeConfigSpec.ConfigValue<String> pickle_bonus_stage;
+    public final ModConfigSpec.BooleanValue numismaticsUtilsPayment;
+    public final ModConfigSpec.BooleanValue dailyLimit;
+    public final ModConfigSpec.BooleanValue platingRequired;
+    public final ModConfigSpec.BooleanValue dynamicMenuItems;
+    public final ModConfigSpec.ConfigValue<String> quality_bonus_stage;
+    public final ModConfigSpec.ConfigValue<String> pickle_bonus_stage;
 
-    public CozyConfig(final ForgeConfigSpec.Builder builder) {
+    public CozyConfig(final ModConfigSpec.Builder builder) {
         menuSizePerStar = builder
                 .comment("How many menu items are required to open your cafe, per star + 1. Has a very large impact on difficulty!")
                 .defineInRange("menu_size_per_star", 3, 0, 5);
@@ -58,7 +58,7 @@ public class CozyConfig {
 
         customerUsernames = builder
                 .comment("List of Minecraft usernames whose skins will be used for spawning customers.")
-                .defineList("customer_usernames", Arrays.asList("Chakyl", "unnecessarymb", "Nitbe", "MHF_Steve", "MHF_Alex", "MHF_Herobrine", "MHF_Chicken", "MHF_Cow", "MHF_Pig", "MHF_Sheep", "MHF_Squid", "MHF_Villager", "MHF_Ocelot", "MHF_Blaze", "MHF_CaveSpider", "MHF_Enderman", "MHF_Ghast", "MHF_Golem", "MHF_LavaSlime", "MHF_PigZombie", "MHF_Skeleton", "MHF_Slime", "MHF_Spider", "MHF_Witch", "MHF_Zombie", "MHF_Cake", "MHF_Chest", "MHF_Melon", "MHF_OakLog", "MHF_Present1", "MHF_Present2", "MHF_Pumpkin", "MHF_TNT", "MHF_TNT2", "MHF_ArrowUp", "MHF_ArrowDown", "MHF_ArrowLeft", "MHF_ArrowRight", "MHF_Exclamation", "MHF_Question"), obj -> obj instanceof String);
+                .defineList("customer_usernames", Arrays.asList("Chakyl", "unnecessarymb", "Nitbe", "MHF_Alex", "MHF_Herobrine", "MHF_Chicken", "MHF_Cow", "MHF_Pig", "MHF_Sheep", "MHF_Squid", "MHF_Villager", "MHF_Ocelot", "MHF_Blaze", "MHF_CaveSpider", "MHF_Enderman", "MHF_Ghast", "MHF_Golem", "MHF_LavaSlime", "MHF_PigZombie", "MHF_Skeleton", "MHF_Slime", "MHF_Spider", "MHF_Witch", "MHF_Zombie", "MHF_Cake", "MHF_Chest", "MHF_Melon", "MHF_OakLog", "MHF_Present1", "MHF_Present2", "MHF_Pumpkin", "MHF_TNT", "MHF_TNT2", "MHF_ArrowUp", "MHF_ArrowDown", "MHF_ArrowLeft", "MHF_ArrowRight", "MHF_Exclamation", "MHF_Question"), obj -> obj instanceof String);
 
         // Currency
         currency_1 = builder.comment("The item to use as a 1 denomination of currency (e.g.: minecraft:emerald)").define("currency_1", "minecraft:gold_nugget");

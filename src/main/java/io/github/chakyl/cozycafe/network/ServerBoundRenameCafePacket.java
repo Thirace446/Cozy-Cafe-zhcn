@@ -3,46 +3,43 @@ package io.github.chakyl.cozycafe.network;
 import io.github.chakyl.cozycafe.blockentities.CafeManagerBlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.codec.ByteBufCodecs;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraftforge.network.NetworkEvent;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
 
-import java.util.function.Supplier;
+import static io.github.chakyl.cozycafe.CozyCafe.loc;
 
-public class ServerBoundRenameCafePacket {
-    private final BlockPos pos;
-    private final String name;
+public record ServerBoundRenameCafePacket(BlockPos pos, String name) implements CustomPacketPayload {
+    public static final Type<ServerBoundRenameCafePacket> TYPE = new Type<>(loc("rename_cafe"));
 
-    public ServerBoundRenameCafePacket(BlockPos pos, String name) {
-        this.pos = pos;
-        this.name = name;
+    public static final StreamCodec<FriendlyByteBuf, ServerBoundRenameCafePacket> STREAM_CODEC = StreamCodec.composite(
+            BlockPos.STREAM_CODEC,
+            ServerBoundRenameCafePacket::pos,
+            ByteBufCodecs.STRING_UTF8,
+            ServerBoundRenameCafePacket::name,
+            ServerBoundRenameCafePacket::new
+    );
+
+    @Override
+    public Type<ServerBoundRenameCafePacket> type() {
+        return TYPE;
     }
 
-    public ServerBoundRenameCafePacket(FriendlyByteBuf buffer) {
-        this.pos = buffer.readBlockPos();
-        this.name = buffer.readUtf();
-    }
-
-    public void encode(FriendlyByteBuf buffer) {
-        buffer.writeBlockPos(this.pos);
-        buffer.writeUtf(this.name);
-    }
-
-    public boolean handle(Supplier<NetworkEvent.Context> supplier) {
-        NetworkEvent.Context ctx = supplier.get();
-        ctx.enqueueWork(() -> {
-            ServerPlayer player = ctx.getSender();
-            if (player != null) {
+    public static void handle(ServerBoundRenameCafePacket packet, IPayloadContext context) {
+        context.enqueueWork(() -> {
+            if (context.player() instanceof ServerPlayer player) {
                 ServerLevel level = player.serverLevel();
-                if (level.isLoaded(this.pos)) {
-                    BlockEntity cafeManager = level.getBlockEntity(this.pos);
+                if (level.isLoaded(packet.pos())) {
+                    BlockEntity cafeManager = level.getBlockEntity(packet.pos());
                     if (cafeManager instanceof CafeManagerBlockEntity cafeManagerBlockEntity) {
-                        cafeManagerBlockEntity.setCafeName(this.name);
+                        cafeManagerBlockEntity.setCafeName(packet.name());
                     }
                 }
             }
         });
-        return true;
     }
 }

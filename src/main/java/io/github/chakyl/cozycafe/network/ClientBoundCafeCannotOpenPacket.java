@@ -1,34 +1,32 @@
 package io.github.chakyl.cozycafe.network;
 
-import io.github.chakyl.cozycafe.gui.CafeManagerScreen;
-import net.minecraft.network.FriendlyByteBuf;
-import net.minecraftforge.network.NetworkEvent;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.ByteBufCodecs;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
 
-import java.util.function.Supplier;
+import static io.github.chakyl.cozycafe.CozyCafe.loc;
+import static io.github.chakyl.cozycafe.network.ClientNetworkUtils.handleCafeCannotOpenClient;
 
-public class ClientBoundCafeCannotOpenPacket {
-    private final Byte errorCode;
+public record ClientBoundCafeCannotOpenPacket(Byte errorCode) implements CustomPacketPayload {
 
-    public ClientBoundCafeCannotOpenPacket(Byte errorCode) {
-        this.errorCode = errorCode;
+    public static final Type<ClientBoundCafeCannotOpenPacket> TYPE = new Type<>(loc( "cafe_cannot_open"));
+
+    public static final StreamCodec<RegistryFriendlyByteBuf, ClientBoundCafeCannotOpenPacket> STREAM_CODEC = StreamCodec.composite(
+            ByteBufCodecs.BYTE,
+            ClientBoundCafeCannotOpenPacket::errorCode,
+            ClientBoundCafeCannotOpenPacket::new
+    );
+
+    @Override
+    public Type<? extends CustomPacketPayload> type() {
+        return TYPE;
     }
 
-    public ClientBoundCafeCannotOpenPacket(FriendlyByteBuf buffer) {
-        this.errorCode = buffer.readByte();
-    }
-
-    public void encode(FriendlyByteBuf buffer) {
-        buffer.writeByte(this.errorCode);
-    }
-
-    public void handle(Supplier<NetworkEvent.Context> supplier) {
-        NetworkEvent.Context context = supplier.get();
+    public static void handle(ClientBoundCafeCannotOpenPacket packet, IPayloadContext context) {
         context.enqueueWork(() -> {
-            if (net.minecraft.client.Minecraft.getInstance().screen instanceof CafeManagerScreen screen) {
-                screen.setErrorMessage(this.errorCode);
-            }
+            handleCafeCannotOpenClient(packet);
         });
-        context.setPacketHandled(true);
     }
-
 }

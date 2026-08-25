@@ -1,6 +1,6 @@
 package io.github.chakyl.cozycafe.item;
 
-import io.github.chakyl.cozycafe.registry.CozyRegistry;
+import io.github.chakyl.cozycafe.CozyRegistry;
 import io.github.chakyl.cozycafe.tags.CozyTags;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
@@ -31,7 +31,7 @@ public class DirtyServingPlateItem extends Item {
     }
 
     @Override
-    public int getUseDuration(ItemStack pStack) {
+    public int getUseDuration(ItemStack pStack, LivingEntity pLivingEntity) {
         return 72000;
     }
 
@@ -55,7 +55,7 @@ public class DirtyServingPlateItem extends Item {
     public void onUseTick(Level level, LivingEntity livingEntity, ItemStack stack, int count) {
         if (!(livingEntity instanceof Player player)) return;
 
-        int useDuration = this.getUseDuration(stack) - count;
+        int useDuration = this.getUseDuration(stack, livingEntity) - count;
         if (useDuration % 5 == 0 && level.isClientSide) {
             HitResult hitResult = player.pick(5.0D, 0.0F, false);
             if (hitResult.getType() == HitResult.Type.BLOCK) {

@@ -23,8 +23,8 @@
   "tooltip.cozycafe.cafe_manager.error": "Couldn't open cafe!",
   "tooltip.cozycafe.cafe_manager.cannot_edit": "You can't edit the menu while cafe is open!",
 
-  "tooltip.cozycafe.cafe_manager.0": "Place Cafe Menus in the working area of the manager",
-  "tooltip.cozycafe.cafe_manager.1": "Link to a cafe sign before opening",
+  "tooltip.always.cozycafe.cafe_manager.0": "Place Cafe Menus in the working area of the manager",
+  "tooltip.always.cozycafe.cafe_manager.1": "Link to a cafe sign before opening",
   "tooltip.always.cozycafe.cafe_sign.0" : "§7Marks where customers will spawn at your cafe.",
   "tooltip.cozycafe.cafe_sign.0" : "§6Shift + Right Click§7 on a Cafe Manager",
   "tooltip.cozycafe.cafe_sign.1" : "§7to link it before placing.",

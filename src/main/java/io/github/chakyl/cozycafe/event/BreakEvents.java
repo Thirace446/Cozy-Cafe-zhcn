@@ -8,11 +8,11 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraftforge.event.level.BlockEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.event.level.BlockEvent;
 
-@Mod.EventBusSubscriber(modid = CozyCafe.MODID)
+@EventBusSubscriber(modid = CozyCafe.MODID)
 public class BreakEvents {
 
 
@@ -36,8 +36,7 @@ public class BreakEvents {
         }
 
         if (shouldCancel) {
-            if (event.getPlayer() != null)
-                event.getPlayer().sendSystemMessage(Component.translatable("block.cozycafe.any.cannot_break").withStyle(ChatFormatting.RED));
+            event.getPlayer().sendSystemMessage(Component.translatable("block.cozycafe.any.cannot_break").withStyle(ChatFormatting.RED));
             event.setCanceled(true);
         }
     }

@@ -3,42 +3,40 @@ package io.github.chakyl.cozycafe.network;
 import io.github.chakyl.cozycafe.blockentities.CafeManagerBlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraftforge.network.NetworkEvent;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
 
-import java.util.function.Supplier;
+import static io.github.chakyl.cozycafe.CozyCafe.loc;
 
-public class ServerBoundToggleCafeOpenPacket {
-    private final BlockPos pos;
+public record ServerBoundToggleCafeOpenPacket(BlockPos pos) implements CustomPacketPayload {
+    public static final Type<ServerBoundToggleCafeOpenPacket> TYPE = new Type<>(loc("toggle_cafe_open"));
 
-    public ServerBoundToggleCafeOpenPacket(BlockPos pos) {
-        this.pos = pos;
+    public static final StreamCodec<FriendlyByteBuf, ServerBoundToggleCafeOpenPacket> STREAM_CODEC = StreamCodec.composite(
+            BlockPos.STREAM_CODEC,
+            ServerBoundToggleCafeOpenPacket::pos,
+            ServerBoundToggleCafeOpenPacket::new
+    );
+
+    @Override
+    public Type<ServerBoundToggleCafeOpenPacket> type() {
+        return TYPE;
     }
 
-    public ServerBoundToggleCafeOpenPacket(FriendlyByteBuf buffer) {
-        this.pos = buffer.readBlockPos();
-    }
-
-    public void encode(FriendlyByteBuf buffer) {
-        buffer.writeBlockPos(this.pos);
-    }
-
-    public boolean handle(Supplier<NetworkEvent.Context> supplier) {
-        NetworkEvent.Context ctx = supplier.get();
-        ctx.enqueueWork(() -> {
-            ServerPlayer player = ctx.getSender();
-            if (player != null) {
+    public static void handle(ServerBoundToggleCafeOpenPacket packet, IPayloadContext context) {
+        context.enqueueWork(() -> {
+            if (context.player() instanceof ServerPlayer player) {
                 ServerLevel level = player.serverLevel();
-                if (level.isLoaded(this.pos)) {
-                    BlockEntity cafeManager = level.getBlockEntity(this.pos);
+                if (level.isLoaded(packet.pos())) {
+                    BlockEntity cafeManager = level.getBlockEntity(packet.pos());
                     if (cafeManager instanceof CafeManagerBlockEntity cafeManagerBlockEntity) {
                         cafeManagerBlockEntity.toggleOpenFromMenu(player);
                     }
                 }
             }
         });
-        return true;
     }
 }

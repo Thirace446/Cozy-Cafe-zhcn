@@ -1,14 +1,13 @@
 package io.github.chakyl.cozycafe.blockentities;
 
-import com.mojang.authlib.GameProfile;
-import dev.latvian.mods.kubejs.stages.Stages;
+import dev.latvian.mods.kubejs.core.PlayerKJS;
 import io.github.chakyl.cozycafe.CozyCafe;
+import io.github.chakyl.cozycafe.CozyRegistry;
 import io.github.chakyl.cozycafe.blocks.CafeMenuBlock;
 import io.github.chakyl.cozycafe.data.CafeMenuItem;
 import io.github.chakyl.cozycafe.data.CafeMenuItemRegistry;
 import io.github.chakyl.cozycafe.entities.CustomerEntity;
 import io.github.chakyl.cozycafe.item.ServingPlateItem;
-import io.github.chakyl.cozycafe.registry.CozyRegistry;
 import io.github.chakyl.cozycafe.util.CustomerEntityUtils;
 import io.github.chakyl.cozycafe.util.CustomerTarget;
 import io.github.chakyl.cozycafe.util.PaymentUtils;
@@ -16,16 +15,15 @@ import io.github.chakyl.numismaticsutils.utils.CurioUtils;
 import io.netty.util.internal.StringUtil;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.NbtUtils;
+import net.minecraft.nbt.NbtOps;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
-import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.server.players.GameProfileCache;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
@@ -37,7 +35,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.phys.AABB;
 import org.jetbrains.annotations.Nullable;
 
 import java.text.NumberFormat;
@@ -60,8 +57,8 @@ public class CafeMenuBlockEntity extends BlockEntity {
     private BlockPos cafeManager;
     private ItemStack requestedItem = ItemStack.EMPTY;
     private ItemStack eatingItem = ItemStack.EMPTY;
+
     private String customerSkin = "";
-    private GameProfile gameProfile;
 
     public CafeMenuBlockEntity(BlockPos pos, BlockState state) {
         super(CozyRegistry.BlockEntityRegistry.CAFE_MENU.get(), pos, state);
@@ -168,12 +165,12 @@ public class CafeMenuBlockEntity extends BlockEntity {
                     }
                 }
                 if (!success) {
-                    pPlayer.level().playSound(null,  pPlayer.getX(), pPlayer.getY(), pPlayer.getZ(), SoundEvents.NOTE_BLOCK_BASS.get(),  SoundSource.PLAYERS,1.0F, 1.0F);
+                    pPlayer.level().playSound(null, pPlayer.getX(), pPlayer.getY(), pPlayer.getZ(), SoundEvents.NOTE_BLOCK_BASS.value(), SoundSource.PLAYERS, 1.0F, 1.0F);
                     return;
                 }
             }
             if (menuItem.bottleDrink()) {
-                this.droppedItem  = menuItem.bottle().getDefaultInstance().copy();
+                this.droppedItem = menuItem.bottle().getDefaultInstance().copy();
             }
             if (!pPlayer.isCreative()) handStack.shrink(1);
             this.orderTime = 0;
@@ -187,7 +184,7 @@ public class CafeMenuBlockEntity extends BlockEntity {
                     0.5, 0.5, 0.5,
                     1.0
             );
-            pPlayer.level().playSound(null, pPlayer.getX(), pPlayer.getY(), pPlayer.getZ(), SoundEvents.NOTE_BLOCK_CHIME.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
+            pPlayer.level().playSound(null, pPlayer.getX(), pPlayer.getY(), pPlayer.getZ(), SoundEvents.NOTE_BLOCK_CHIME.value(), SoundSource.PLAYERS, 1.0F, 1.0F);
             this.handlePayment(pPos, pPlayer, menuItem, resolvedStack);
             CafeManagerBlockEntity cafeManagerBlockEntity = this.getCafeManager(this.level);
             if (cafeManagerBlockEntity != null) {
@@ -196,7 +193,7 @@ public class CafeMenuBlockEntity extends BlockEntity {
             this.waitTime = -1;
             this.setChanged();
         } else {
-            pPlayer.level().playSound(null, pPlayer.getX(), pPlayer.getY(), pPlayer.getZ(), SoundEvents.NOTE_BLOCK_BASS.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
+            pPlayer.level().playSound(null, pPlayer.getX(), pPlayer.getY(), pPlayer.getZ(), SoundEvents.NOTE_BLOCK_BASS.value(), SoundSource.PLAYERS, 1.0F, 1.0F);
         }
     }
 
@@ -207,7 +204,7 @@ public class CafeMenuBlockEntity extends BlockEntity {
             resolvedPrice *= (2 - ((double) this.waitTime / MAX_WAIT_TIME));
         }
         if (CozyCafe.KUBEJS_INSTALLED) {
-            if (cafeMenuItem.item().getDefaultInstance().is(PICKLE) && Stages.get(pPlayer).has(CozyCafe.CONFIG.pickle_bonus_stage.get())) {
+            if (cafeMenuItem.item().getDefaultInstance().is(PICKLE) && ((PlayerKJS) pPlayer).kjs$getStages().has(CozyCafe.CONFIG.pickle_bonus_stage.get())) {
                 resolvedPrice *= 2;
             }
         }
@@ -274,7 +271,8 @@ public class CafeMenuBlockEntity extends BlockEntity {
     public boolean orderedDessert(int currentCourse) {
         if (currentCourse != 2) return true;
         CafeManagerBlockEntity cafeManagerBlockEntity = this.getCafeManager(this.level);
-        if (cafeManagerBlockEntity != null && !cafeManagerBlockEntity.hasFoodType(CafeMenuItem.MenuItemCategory.DESSERT)) return false;
+        if (cafeManagerBlockEntity != null && !cafeManagerBlockEntity.hasFoodType(CafeMenuItem.MenuItemCategory.DESSERT))
+            return false;
         if (cafeManagerBlockEntity != null && cafeManagerBlockEntity.onlyHasCategory(CafeMenuItem.MenuItemCategory.DESSERT)) {
             return true;
         }
@@ -283,7 +281,7 @@ public class CafeMenuBlockEntity extends BlockEntity {
 
     public boolean hasMains() {
         CafeManagerBlockEntity cafeManagerBlockEntity = this.getCafeManager(this.level);
-        if (cafeManagerBlockEntity != null ) {
+        if (cafeManagerBlockEntity != null) {
             return cafeManagerBlockEntity.hasMenuCategory(CafeMenuItem.MenuItemCategory.MAIN);
         }
         return false;
@@ -321,7 +319,6 @@ public class CafeMenuBlockEntity extends BlockEntity {
         this.currentCourse = 0;
         this.hasCustomer = false;
         this.customerSkin = "";
-        this.gameProfile = null;
         this.requestedItem = ItemStack.EMPTY;
         this.eatingItem = ItemStack.EMPTY;
         this.setChangedForRender();
@@ -374,11 +371,11 @@ public class CafeMenuBlockEntity extends BlockEntity {
     public boolean getHasCustomer() {
         return this.hasCustomer;
     }
-
-    @Override
-    public AABB getRenderBoundingBox() {
-        return new AABB(this.worldPosition).expandTowards(0, 1.5, 0).inflate(0.5, 0, 0.5);
-    }
+//  TODO: Not 1.21.1?
+//    @Override
+//    public AABB getRenderBoundingBox() {
+//        return new AABB(this.worldPosition).expandTowards(0, 1.5, 0).inflate(0.5, 0, 0.5);
+//    }
 
     private void setChangedForRender() {
         this.setChanged();
@@ -388,91 +385,65 @@ public class CafeMenuBlockEntity extends BlockEntity {
     public void setCustomerSkinFromUsername(String name) {
         if (StringUtil.isNullOrEmpty(name)) return;
         this.customerSkin = name;
-        MinecraftServer server = this.level.getServer();
-        if (server == null) return;
-
-        GameProfileCache cache = server.getProfileCache();
-        if (cache != null) {
-            cache.getAsync(name, profileOpt -> {
-                if (profileOpt != null && profileOpt.isPresent()) {
-                    GameProfile profile = profileOpt.get();
-                    GameProfile filledProfile = server.getSessionService().fillProfileProperties(profile, true);
-
-                    server.execute(() -> {
-                        this.gameProfile = filledProfile;
-                        setChangedForRender();
-                    });
-                }
-            });
-        }
         setChangedForRender();
     }
 
-
-    @Nullable
-    public GameProfile getGameProfile() {
-        return this.gameProfile;
+    public String getCustomerSkin() {
+        return this.customerSkin;
     }
 
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
-        tag.putInt("currentCourse", this.currentCourse);
-        tag.putInt("waitTime", this.waitTime);
-        tag.putInt("orderTime", this.orderTime);
-        tag.putInt("customerTravelTime", this.customerTravelTime);
+    protected void saveAdditional(CompoundTag tag, HolderLookup.Provider provider) {
+        super.saveAdditional(tag, provider);
+        tag.putInt("current_course", this.currentCourse);
+        tag.putInt("wait_time", this.waitTime);
+        tag.putInt("order_time", this.orderTime);
+        tag.putInt("customer_travel_time", this.customerTravelTime);
         if (!this.droppedItem.isEmpty()) {
-            tag.put("droppedItem", this.droppedItem.save(new CompoundTag()));
+            tag.put("dropped_item", this.droppedItem.save(provider, new CompoundTag()));
         }
-        tag.putBoolean("hasCustomer", this.hasCustomer);
+        tag.putBoolean("has_customer", this.hasCustomer);
         if (this.cafeManager != null) {
-            tag.put("cafeManager", NbtUtils.writeBlockPos(this.cafeManager));
+            BlockPos.CODEC.encodeStart(NbtOps.INSTANCE, this.cafeManager).result().ifPresent(t -> tag.put("cafe_manager", t));
         }
-
         if (!this.requestedItem.isEmpty()) {
-            tag.put("requestedItem", this.requestedItem.save(new CompoundTag()));
+            tag.put("requested_item", this.requestedItem.save(provider, new CompoundTag()));
         }
         if (!this.eatingItem.isEmpty()) {
-            tag.put("eatingItem", this.eatingItem.save(new CompoundTag()));
+            tag.put("eating_item", this.eatingItem.save(provider, new CompoundTag()));
         }
-        tag.putString("customerSkin", this.customerSkin);
-        if (this.gameProfile != null) {
-            tag.put("customerProfile", NbtUtils.writeGameProfile(new CompoundTag(), this.gameProfile));
-        }
+        tag.putString("customer_skin", this.customerSkin);
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
-        this.currentCourse = tag.getInt("currentCourse");
-        this.waitTime = tag.getInt("waitTime");
-        this.orderTime = tag.getInt("orderTime");
-        this.customerTravelTime = tag.getInt("customerTravelTime");
-        this.hasCustomer = tag.getBoolean("hasCustomer");
-        if (tag.contains("droppedItem")) {
-            this.droppedItem = ItemStack.of(tag.getCompound("droppedItem"));
+    protected void loadAdditional(CompoundTag tag, HolderLookup.Provider provider) {
+        super.loadAdditional(tag, provider);
+        this.currentCourse = tag.getInt("current_course");
+        this.waitTime = tag.getInt("wait_time");
+        this.orderTime = tag.getInt("order_time");
+        this.customerTravelTime = tag.getInt("customer_travel_time");
+        this.hasCustomer = tag.getBoolean("has_customer");
+        if (tag.contains("dropped_item")) {
+            ItemStack.parse(provider, tag.getCompound("dropped_item")).ifPresentOrElse(stack -> this.droppedItem = stack, () -> this.droppedItem = ItemStack.EMPTY);
         } else {
-            this.requestedItem = ItemStack.EMPTY;
+            this.droppedItem = ItemStack.EMPTY;
         }
-        if (tag.contains("cafeManager")) {
-            this.cafeManager = NbtUtils.readBlockPos(tag.getCompound("cafeManager"));
+        if (tag.contains("cafe_manager")) {
+            BlockPos.CODEC.parse(NbtOps.INSTANCE, tag.get("cafe_manager")).result().ifPresent(pos -> this.cafeManager = pos);
         } else {
             this.cafeManager = null;
         }
-        if (tag.contains("requestedItem")) {
-            this.requestedItem = ItemStack.of(tag.getCompound("requestedItem"));
+        if (tag.contains("requested_item")) {
+            ItemStack.parse(provider, tag.getCompound("requested_item")).ifPresentOrElse(stack -> this.requestedItem = stack, () -> this.requestedItem = ItemStack.EMPTY);
         } else {
             this.requestedItem = ItemStack.EMPTY;
         }
-        if (tag.contains("eatingItem")) {
-            this.eatingItem = ItemStack.of(tag.getCompound("eatingItem"));
+        if (tag.contains("eating_item")) {
+            ItemStack.parse(provider, tag.getCompound("eating_item")).ifPresentOrElse(s -> this.eatingItem = s, () -> this.eatingItem = ItemStack.EMPTY);
         } else {
             this.eatingItem = ItemStack.EMPTY;
         }
-        this.customerSkin = tag.getString("customerSkin");
-        if (tag.contains("customerProfile")) {
-            this.gameProfile = NbtUtils.readGameProfile(tag.getCompound("customerProfile"));
-        }
+        this.customerSkin = tag.getString("customer_skin");
     }
 
     @Nullable
@@ -482,17 +453,16 @@ public class CafeMenuBlockEntity extends BlockEntity {
     }
 
     @Override
-    public CompoundTag getUpdateTag() {
+    public CompoundTag getUpdateTag(HolderLookup.Provider provider) {
         CompoundTag tag = new CompoundTag();
-        this.saveAdditional(tag);
+        this.saveAdditional(tag, provider);
         return tag;
     }
 
     @Override
-    public void handleUpdateTag(CompoundTag tag) {
-        super.handleUpdateTag(tag);
-        this.load(tag);
-
+    public void handleUpdateTag(CompoundTag tag, HolderLookup.Provider provider) {
+        super.handleUpdateTag(tag, provider);
+        this.loadAdditional(tag, provider);
     }
 
 }

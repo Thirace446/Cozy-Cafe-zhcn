@@ -7,26 +7,23 @@ import com.google.gson.JsonObject;
 import dev.shadowsoffire.placebo.reload.DynamicRegistry;
 import io.github.chakyl.cozycafe.CozyCafe;
 import io.github.chakyl.cozycafe.tags.CozyTags;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.ResourceManager;
-import net.minecraft.tags.TagKey;
 import net.minecraft.util.profiling.ProfilerFiller;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
-import net.minecraftforge.common.Tags;
-import net.minecraftforge.registries.ForgeRegistries;
 
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
+import static io.github.chakyl.cozycafe.CozyCafe.loc;
 import static io.github.chakyl.cozycafe.util.FoodClassificationUtils.dropsBottle;
 import static io.github.chakyl.cozycafe.util.FoodClassificationUtils.dropsBowl;
 
 public class CafeMenuItemRegistry extends DynamicRegistry<CafeMenuItem> {
-
     public static final CafeMenuItemRegistry INSTANCE = new CafeMenuItemRegistry();
     private Map<String, CafeMenuItem> menuItemsByID = new HashMap<>();
 
@@ -36,18 +33,18 @@ public class CafeMenuItemRegistry extends DynamicRegistry<CafeMenuItem> {
 
     @Override
     protected void registerBuiltinCodecs() {
-        this.registerDefaultCodec(new ResourceLocation(CozyCafe.MODID, "menu"), CafeMenuItem.CODEC);
+        this.registerDefaultCodec(loc("menu"), CafeMenuItem.CODEC);
     }
 
     @Override
-    protected void beginReload() {
-        super.beginReload();
+    protected void beginReload(ReloadType type) {
+        super.beginReload(type);
         this.menuItemsByID = new HashMap<>();
     }
 
     @Override
-    protected void onReload() {
-        super.onReload();
+    protected void onReload(ReloadType type) {
+        super.onReload(type);
         this.menuItemsByID = ImmutableMap.copyOf(this.menuItemsByID);
     }
 
@@ -59,19 +56,19 @@ public class CafeMenuItemRegistry extends DynamicRegistry<CafeMenuItem> {
         Map<ResourceLocation, JsonElement> loadedResources = new HashMap<>(super.prepare(pResourceManager, pProfiler));
         CozyCafe.LOGGER.info("[COZYCAFE] Beginning Dynamic Menu Items");
         /**
-         * Autogeneration is denied in these cirucmstatnces:
+         * Autogeneration is denied in these circumstances:
          * - Config turned off
          * - Isn't edible
          * - has bad word
          * - Is in the cozycafe:not_served tag
          */
         for (Item item : BuiltInRegistries.ITEM) {
-            if (item == Items.AIR || !item.isEdible()) continue;
+            if (item == Items.AIR || item.getDefaultInstance().get(DataComponents.FOOD) == null) continue;
             if (item.getDefaultInstance().is(CozyTags.NOT_SERVED)) continue;
             ResourceLocation itemRL = BuiltInRegistries.ITEM.getKey(item);
             String itemPath = itemRL.getPath();
             if (Arrays.stream(DENIED_KEYWORDS).anyMatch(itemPath::contains)) continue;
-            ResourceLocation virtualRegistryKey = new ResourceLocation(CozyCafe.MODID, itemRL.getNamespace() + "/" + itemPath);
+            ResourceLocation virtualRegistryKey = loc(itemRL.getNamespace() + "/" + itemPath);
             if (loadedResources.containsKey(virtualRegistryKey)) continue;
             String menuItemCategory = determineCategoryByTagsKeywords(itemPath);
             JsonObject virtualJson = new JsonObject();

@@ -2,6 +2,7 @@ package io.github.chakyl.cozycafe.util;
 
 import io.github.chakyl.cozycafe.CozyCafe;
 import io.github.chakyl.cozycafe.data.CafeMenuItem;
+import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.ai.attributes.Attribute;
@@ -9,12 +10,9 @@ import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraft.world.item.Items;
 
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Supplier;
 
 public class PaymentUtils {
@@ -42,8 +40,8 @@ public class PaymentUtils {
             String itemRegistryName = entry.getValue().get();
 
             if (itemRegistryName != null && !itemRegistryName.trim().isEmpty()) {
-                Item item = ForgeRegistries.ITEMS.getValue(new ResourceLocation(itemRegistryName));
-                if (item != null && item != net.minecraft.world.item.Items.AIR) {
+                Item item = BuiltInRegistries.ITEM.get(ResourceLocation.parse(itemRegistryName));
+                if (item != Items.AIR) {
                     cachedValidCoinMap.put(item, entry.getKey());
                 }
             }
@@ -80,9 +78,9 @@ public class PaymentUtils {
     // SSV specific code
     public static double getMultAttributeMultiplier(Player player, CafeMenuItem menuItem) {
         if (player == null) return 1.0;
-        Attribute attribute = BuiltInRegistries.ATTRIBUTE.get(new ResourceLocation(menuItem.multAttribute()));
-        if (attribute != null) {
-            AttributeInstance instance = player.getAttribute(attribute);
+        Optional<Holder.Reference<Attribute>> attribute = BuiltInRegistries.ATTRIBUTE.getHolder(ResourceLocation.parse(menuItem.multAttribute()));
+        if (attribute.isPresent()) {
+            AttributeInstance instance = player.getAttribute(attribute.get());
             if (instance != null) return instance.getValue();
         }
         return 1.0;

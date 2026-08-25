@@ -1,11 +1,11 @@
 package io.github.chakyl.cozycafe.blocks;
 
+import io.github.chakyl.cozycafe.CozyRegistry;
 import io.github.chakyl.cozycafe.blockentities.CafeMenuBlockEntity;
-import io.github.chakyl.cozycafe.registry.CozyRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.InteractionResult;
+import net.minecraft.world.ItemInteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
@@ -24,7 +24,7 @@ import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import net.minecraftforge.common.util.FakePlayer;
+import net.neoforged.neoforge.common.util.FakePlayer;
 
 import javax.annotation.Nullable;
 
@@ -65,16 +65,16 @@ public class CafeMenuBlock extends Block implements EntityBlock {
     }
 
     @Override
-    public InteractionResult use(BlockState pState, Level pLevel, BlockPos pPos, Player pPlayer, InteractionHand pHand, BlockHitResult pHit) {
+    public ItemInteractionResult useItemOn(ItemStack pStack, BlockState pState, Level pLevel, BlockPos pPos, Player pPlayer, InteractionHand pHand, BlockHitResult pHit) {
         if (!pLevel.isClientSide && pHand == InteractionHand.MAIN_HAND) {
-            if (pPlayer instanceof FakePlayer) return InteractionResult.sidedSuccess(pLevel.isClientSide());
+            if (pPlayer instanceof FakePlayer) return ItemInteractionResult.sidedSuccess(pLevel.isClientSide());
             BlockEntity entity = pLevel.getBlockEntity(pPos);
             ItemStack handStack = pPlayer.getItemInHand(pHand);
             if (entity instanceof CafeMenuBlockEntity cafeMenuBlockEntity) {
                 if (!handStack.isEmpty() && cafeMenuBlockEntity.canServe()) {
                     pPlayer.swing(pHand);
                     cafeMenuBlockEntity.handleServe(pPos, pPlayer, handStack);
-                    return InteractionResult.CONSUME;
+                    return ItemInteractionResult.CONSUME;
                 } else {
                     cafeMenuBlockEntity.handleClearDirtyIfPossible(pPos, pPlayer, handStack);
                 }
@@ -82,7 +82,7 @@ public class CafeMenuBlock extends Block implements EntityBlock {
                 throw new IllegalStateException("No Container Provider for Cafe Manager!");
             }
         }
-        return InteractionResult.sidedSuccess(pLevel.isClientSide());
+        return ItemInteractionResult.SUCCESS;
     }
 
     @Nullable

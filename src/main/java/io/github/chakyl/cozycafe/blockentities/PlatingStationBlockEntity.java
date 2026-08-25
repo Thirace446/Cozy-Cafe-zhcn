@@ -1,18 +1,21 @@
 package io.github.chakyl.cozycafe.blockentities;
 
+import io.github.chakyl.cozycafe.CozyRegistry;
 import io.github.chakyl.cozycafe.data.CafeMenuItem;
 import io.github.chakyl.cozycafe.data.CafeMenuItemRegistry;
 import io.github.chakyl.cozycafe.item.ServingPlateItem;
-import io.github.chakyl.cozycafe.registry.CozyRegistry;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.Tag;
+import net.minecraft.network.Connection;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.InteractionResult;
+import net.minecraft.world.ItemInteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
@@ -32,7 +35,7 @@ public class PlatingStationBlockEntity extends BlockEntity {
     }
 
     // evil method
-    public InteractionResult handlePlating(Level level, Player player, InteractionHand hand) {
+    public ItemInteractionResult handlePlating(Level level, Player player, InteractionHand hand) {
         ItemStack heldItem = player.getItemInHand(hand);
         if (this.plateItem.isEmpty()) {
             if (heldItem.is(CozyRegistry.ItemRegistry.SERVING_PLATE.get())) {
@@ -40,7 +43,7 @@ public class PlatingStationBlockEntity extends BlockEntity {
                     this.plateItem = heldItem.split(1);
                     this.setChangedForRender();
                 }
-                return InteractionResult.sidedSuccess(level.isClientSide);
+                return ItemInteractionResult.sidedSuccess(level.isClientSide);
             }
         } else if (this.plateItem.is(CozyRegistry.ItemRegistry.SERVING_PLATE.get())) {
             if (!heldItem.isEmpty()) {
@@ -61,14 +64,14 @@ public class PlatingStationBlockEntity extends BlockEntity {
                         player.displayClientMessage(Component.translatable("block.cozycafe.plating_station.not_menu_item").withStyle(ChatFormatting.RED), true);
                     }
                 }
-                return InteractionResult.sidedSuccess(level.isClientSide);
+                return ItemInteractionResult.sidedSuccess(level.isClientSide);
             }
             if (heldItem.isEmpty() && !level.isClientSide) {
                 player.setItemInHand(hand, this.plateItem.copy());
                 this.plateItem = ItemStack.EMPTY;
                 this.setChangedForRender();
             }
-            return InteractionResult.sidedSuccess(level.isClientSide);
+            return ItemInteractionResult.sidedSuccess(level.isClientSide);
         } else {
             if (!level.isClientSide) {
                 if (!player.getInventory().add(this.plateItem)) {
@@ -77,7 +80,7 @@ public class PlatingStationBlockEntity extends BlockEntity {
                 this.plateItem = ItemStack.EMPTY;
                 this.setChangedForRender();
             }
-            return InteractionResult.sidedSuccess(level.isClientSide);
+            return ItemInteractionResult.sidedSuccess(level.isClientSide);
         }
         return null;
     }
@@ -88,15 +91,21 @@ public class PlatingStationBlockEntity extends BlockEntity {
     }
 
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
-        tag.put("plateItem", this.plateItem.save(new CompoundTag()));
+    protected void saveAdditional(CompoundTag tag, HolderLookup.Provider provider) {
+        super.saveAdditional(tag, provider);
+        if (!this.plateItem.isEmpty()) {
+            tag.put("plate_item", this.plateItem.save(provider, new CompoundTag()));
+        }
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
-        this.plateItem = ItemStack.of(tag.getCompound("plateItem"));
+    protected void loadAdditional(CompoundTag tag, HolderLookup.Provider provider) {
+        super.loadAdditional(tag, provider);
+        if (tag.contains("plate_item", Tag.TAG_COMPOUND)) {
+            this.plateItem = ItemStack.parse(provider, tag.getCompound("plate_item")).orElse(ItemStack.EMPTY);
+        } else {
+            this.plateItem = ItemStack.EMPTY;
+        }
     }
 
     @Nullable
@@ -106,16 +115,21 @@ public class PlatingStationBlockEntity extends BlockEntity {
     }
 
     @Override
-    public CompoundTag getUpdateTag() {
+    public CompoundTag getUpdateTag(HolderLookup.Provider provider) {
         CompoundTag tag = new CompoundTag();
-        this.saveAdditional(tag);
+        this.saveAdditional(tag, provider);
         return tag;
     }
 
     @Override
-    public void handleUpdateTag(CompoundTag tag) {
-        super.handleUpdateTag(tag);
-        this.load(tag);
+    public void handleUpdateTag(CompoundTag tag, HolderLookup.Provider provider) {
+        super.handleUpdateTag(tag, provider);
+        this.loadAdditional(tag, provider);
+    }
 
+    @Override
+    public void onDataPacket(Connection connection, ClientboundBlockEntityDataPacket clientboundBlockEntityDataPacket, HolderLookup.Provider provider) {
+        CompoundTag tag = clientboundBlockEntityDataPacket.getTag();
+        loadAdditional(tag, provider);
     }
 }

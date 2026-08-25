@@ -14,7 +14,7 @@
     "###"
   ],
   "result": {
-    "item": "cozycafe:cafe_menu"
+    "id": "cozycafe:cafe_menu"
   },
   "show_notification": true
 }

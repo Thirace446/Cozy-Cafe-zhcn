@@ -4,7 +4,7 @@ import com.mojang.authlib.GameProfile;
 import io.github.chakyl.cozycafe.blockentities.CafeMenuBlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.NbtUtils;
+import net.minecraft.nbt.NbtOps;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -13,18 +13,13 @@ import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.ai.goal.FloatGoal;
 import net.minecraft.world.entity.ai.goal.Goal;
 import net.minecraft.world.entity.ai.goal.WaterAvoidingRandomStrollGoal;
-import net.minecraft.world.entity.ai.navigation.GroundPathNavigation;
-import net.minecraft.world.entity.ai.navigation.PathNavigation;
-import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.pathfinder.*;
+import net.minecraft.world.level.pathfinder.Path;
 
 import java.util.EnumSet;
 
 public class CustomerEntity extends PathfinderMob {
-    public static final EntityDataAccessor<CompoundTag> SKIN_PROFILE = SynchedEntityData.defineId(CustomerEntity.class, EntityDataSerializers.COMPOUND_TAG);
-    private GameProfile cachedProfile = null;
+    public static final EntityDataAccessor<String> CUSTOMER_SKIN = SynchedEntityData.defineId(CustomerEntity.class, EntityDataSerializers.STRING);    private GameProfile cachedProfile = null;
     private BlockPos targetMenuPos;
     private BlockPos targetSignPos;
     private int travelTime = 0;
@@ -52,21 +47,12 @@ public class CustomerEntity extends PathfinderMob {
         }
     }
 
-    public GameProfile getOrCreateProfile() {
-        return this.cachedProfile;
+    public String getCustomerSkin() {
+        return this.entityData.get(CUSTOMER_SKIN);
     }
 
-    @Override
-    public void onSyncedDataUpdated(EntityDataAccessor<?> pKey) {
-        super.onSyncedDataUpdated(pKey);
-        if (SKIN_PROFILE.equals(pKey)) {
-            CompoundTag tag = this.entityData.get(SKIN_PROFILE);
-            if (!tag.isEmpty()) {
-                this.cachedProfile = NbtUtils.readGameProfile(tag);
-            } else {
-                this.cachedProfile = null;
-            }
-        }
+    public void setCustomerSkin(String username) {
+        this.entityData.set(CUSTOMER_SKIN, username != null ? username : "");
     }
 
     public BlockPos getTargetMenuPos() {
@@ -86,80 +72,81 @@ public class CustomerEntity extends PathfinderMob {
     }
 
     @Override
-    protected void defineSynchedData() {
-        super.defineSynchedData();
-        this.entityData.define(SKIN_PROFILE, new CompoundTag());
+    protected void defineSynchedData(SynchedEntityData.Builder pBuilder) {
+        super.defineSynchedData(pBuilder);
+        pBuilder.define(CUSTOMER_SKIN, "");
     }
 
     @Override
     public void addAdditionalSaveData(CompoundTag nbt) {
         super.addAdditionalSaveData(nbt);
         if (this.targetMenuPos != null) {
-            nbt.put("targetMenuPos", NbtUtils.writeBlockPos(this.targetMenuPos));
+            BlockPos.CODEC.encodeStart(NbtOps.INSTANCE, this.targetMenuPos).result().ifPresent(tag -> nbt.put("target_menu_pos", tag));
         }
         if (this.targetSignPos != null) {
-            nbt.put("targetSignPos", NbtUtils.writeBlockPos(this.targetSignPos));
+            BlockPos.CODEC.encodeStart(NbtOps.INSTANCE, this.targetSignPos).result().ifPresent(tag -> nbt.put("target_sign_pos", tag));
         }
-        nbt.putInt("travelTime", this.travelTime);
-        nbt.put("customerProfile", this.entityData.get(SKIN_PROFILE));
+        nbt.putInt("travel_time", this.travelTime);
+        nbt.putString("customer_username", getCustomerSkin());
     }
 
     @Override
     public void readAdditionalSaveData(CompoundTag nbt) {
         super.readAdditionalSaveData(nbt);
-        if (nbt.contains("targetMenuPos")) {
-            this.targetMenuPos = NbtUtils.readBlockPos(nbt.getCompound("targetMenuPos"));
+        if (nbt.contains("target_menu_pos")) {
+            BlockPos.CODEC.parse(NbtOps.INSTANCE, nbt.get("target_menu_pos")).result().ifPresent(pos -> this.targetMenuPos = pos);
         }
-        if (nbt.contains("targetSignPos")) {
-            this.targetSignPos = NbtUtils.readBlockPos(nbt.getCompound("targetSignPos"));
+        if (nbt.contains("target_sign_pos")) {
+            BlockPos.CODEC.parse(NbtOps.INSTANCE, nbt.get("target_sign_pos")).result().ifPresent(pos -> this.targetSignPos = pos);
         }
-        this.travelTime = nbt.getInt("travelTime");
-        if (nbt.contains("customerProfile")) {
-            this.entityData.set(SKIN_PROFILE, nbt.getCompound("customerProfile"));
+        this.travelTime = nbt.getInt("travel_time");
+        if (nbt.contains("customer_username")) {
+            setCustomerSkin(nbt.getString("customer_username"));
         }
     }
 
-    @Override
-    protected PathNavigation createNavigation(Level level) {
-        return new GroundPathNavigation(this, level) {
-            @Override
-            protected PathFinder createPathFinder(int maxVisitedNodes) {
-                this.nodeEvaluator = new WalkNodeEvaluator() {
-                    @Override
-                    public BlockPathTypes getBlockPathType(BlockGetter blockGetter, int x, int y, int z) {
-                        BlockPos pos = new BlockPos(x, y, z);
-                        BlockState state = blockGetter.getBlockState(pos);
-
-                        if (!state.isAir() && !state.isCollisionShapeFullBlock(blockGetter, pos)) {
-                            return BlockPathTypes.TRAPDOOR;
-                        }
-
-                        return super.getBlockPathType(blockGetter, x, y, z);
-                    }
-
-                    @Override
-                    public int getNeighbors(Node[] outputArray, Node node) {
-                        int count = super.getNeighbors(outputArray, node);
-
-                        for (int i = 0; i < count; i++) {
-                            Node neighbor = outputArray[i];
-
-                            if (neighbor.y != node.y) {
-                                neighbor.costMalus += 200.0F;
-                            }
-                            if (neighbor.type == BlockPathTypes.TRAPDOOR) {
-                                neighbor.costMalus += 100.0F;
-                            }
-                        }
-                        return count;
-                    }
-                };
-
-                this.nodeEvaluator.setCanPassDoors(true);
-                return new PathFinder(this.nodeEvaluator, maxVisitedNodes);
-            }
-        };
-    }
+    // todo: don't feel like doing it!
+//    @Override
+//    protected PathNavigation createNavigation(Level level) {
+//        return new GroundPathNavigation(this, level) {
+//            @Override
+//            protected PathFinder createPathFinder(int maxVisitedNodes) {
+//                this.nodeEvaluator = new WalkNodeEvaluator() {
+//                    @Override
+//                    public BlockPathTypes getBlockPathType(BlockGetter blockGetter, int x, int y, int z) {
+//                        BlockPos pos = new BlockPos(x, y, z);
+//                        BlockState state = blockGetter.getBlockState(pos);
+//
+//                        if (!state.isAir() && !state.isCollisionShapeFullBlock(blockGetter, pos)) {
+//                            return BlockPathTypes.TRAPDOOR;
+//                        }
+//
+//                        return super.getBlockPathType(blockGetter, x, y, z);
+//                    }
+//
+//                    @Override
+//                    public int getNeighbors(Node[] outputArray, Node node) {
+//                        int count = super.getNeighbors(outputArray, node);
+//
+//                        for (int i = 0; i < count; i++) {
+//                            Node neighbor = outputArray[i];
+//
+//                            if (neighbor.y != node.y) {
+//                                neighbor.costMalus += 200.0F;
+//                            }
+//                            if (neighbor.type == BlockPathTypes.TRAPDOOR) {
+//                                neighbor.costMalus += 100.0F;
+//                            }
+//                        }
+//                        return count;
+//                    }
+//                };
+//
+//                this.nodeEvaluator.setCanPassDoors(true);
+//                return new PathFinder(this.nodeEvaluator, maxVisitedNodes);
+//            }
+//        };
+//    }
 
 
     public static class NavigateToSignGoal extends Goal {

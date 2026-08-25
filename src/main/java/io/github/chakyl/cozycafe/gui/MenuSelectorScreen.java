@@ -13,6 +13,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.ImageButton;
+import net.minecraft.client.gui.components.WidgetSprites;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -21,18 +22,19 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import static io.github.chakyl.cozycafe.CozyCafe.loc;
 import static io.github.chakyl.cozycafe.util.GeneralUtils.formatPrice;
 
 @OnlyIn(Dist.CLIENT)
 public class MenuSelectorScreen extends AbstractContainerScreen<MenuSelectorMenu> {
 
-    private static final ResourceLocation GUI_LOCATION = new ResourceLocation(CozyCafe.MODID, "textures/gui/menu_selector.png");
+    private static final ResourceLocation GUI_LOCATION = loc("textures/gui/menu_selector.png");
     private static final int TEXTURE_WIDTH = 256;
     private static final int TEXTURE_HEIGHT = 256;
     private static final int SELL_ITEM_1_X = 5;
@@ -55,6 +57,7 @@ public class MenuSelectorScreen extends AbstractContainerScreen<MenuSelectorMenu
     private boolean isDragging;
     private List<ItemStack> cafeMenu = new ArrayList<>();
     private final CafeMenuItemButton[] cafeMenuItemButtons = new CafeMenuItemButton[NUMBER_OF_MENU_BUTTONS];
+    private static final WidgetSprites DELEETE_BUTTON_SPRITES = new WidgetSprites(GUI_LOCATION, GUI_LOCATION);
 
     public MenuSelectorScreen(MenuSelectorMenu pMenu, Inventory pPlayerInventory, Component pTitle) {
         super(pMenu, pPlayerInventory, pTitle);
@@ -77,14 +80,11 @@ public class MenuSelectorScreen extends AbstractContainerScreen<MenuSelectorMenu
         cafeMenu = this.menu.getCafeMenu();
         for (int l = 0; l < NUMBER_OF_MENU_BUTTONS; ++l) {
             final int slotIndex = l;
-            this.cafeMenuItemButtons[l] = this.addRenderableWidget(new CafeMenuItemButton(leftPos + 140, offset, l, 15, 15, 176, 32, 16, GUI_LOCATION, 256, 256, (button) -> {
-                if (button instanceof CafeMenuItemButton) {
-                    int itemIndex = this.menu.getCafeMenu().size() > 4 ? this.scrollOff + slotIndex : slotIndex;
-                    if (itemIndex < this.menu.getCafeMenu().size()) {
-                        this.postButtonClick(itemIndex);
-                    }
+            this.cafeMenuItemButtons[l] = this.addRenderableWidget(new CafeMenuItemButton(leftPos + 140, offset, l, 15, 15, DELEETE_BUTTON_SPRITES, (button) -> {
+                int itemIndex = this.menu.getCafeMenu().size() > 4 ? this.scrollOff + slotIndex : slotIndex;
+                if (itemIndex < this.menu.getCafeMenu().size()) {
+                    this.postButtonClick(itemIndex);
                 }
-
             }));
             offset += MENU_BUTTON_HEIGHT;
         }
@@ -170,7 +170,7 @@ public class MenuSelectorScreen extends AbstractContainerScreen<MenuSelectorMenu
 
     @Override
     public void render(GuiGraphics pGuiGraphics, int pMouseX, int pMouseY, float pPartialTick) {
-        this.renderBackground(pGuiGraphics);
+        this.renderBackground(pGuiGraphics, pMouseX,pMouseY, pPartialTick);
         super.render(pGuiGraphics, pMouseX, pMouseY, pPartialTick);
         this.renderTooltip(pGuiGraphics, pMouseX, pMouseY);
     }
@@ -181,10 +181,10 @@ public class MenuSelectorScreen extends AbstractContainerScreen<MenuSelectorMenu
         MenuItemSelectionState currentStatus = MenuItemSelectionState.fromCode(this.menu.getMenuItemAdditionStatus());
         if (currentStatus != lastStatus) {
             if (currentStatus == MenuItemSelectionState.VALID) {
-                Minecraft.getInstance().player.playSound(SoundEvents.NOTE_BLOCK_CHIME.get(), 1.0F, 1.0F);
+                Minecraft.getInstance().player.playSound(SoundEvents.NOTE_BLOCK_CHIME.value(), 1.0F, 1.0F);
                 this.cafeMenu = this.menu.getCafeMenu();
             } else if (currentStatus == MenuItemSelectionState.INVALID) {
-                Minecraft.getInstance().player.playSound(SoundEvents.NOTE_BLOCK_BASS.get(), 1.0F, 1.0F);
+                Minecraft.getInstance().player.playSound(SoundEvents.NOTE_BLOCK_BASS.value(), 1.0F, 1.0F);
             }
             this.lastStatus = currentStatus;
         }
@@ -277,8 +277,8 @@ public class MenuSelectorScreen extends AbstractContainerScreen<MenuSelectorMenu
     class CafeMenuItemButton extends ImageButton {
         final int index;
 
-        public CafeMenuItemButton(int pX, int pY, int pIndex, int pWidth, int pHeight, int pXTexStart, int pYTexStart, int pYDiffTex, ResourceLocation pResourceLocation, int pTextureWidth, int pTextureHeight, Button.OnPress pOnPress) {
-            super(pX, pY, pWidth, pHeight, pXTexStart, pYTexStart, pYDiffTex, pResourceLocation, pTextureWidth, pTextureHeight, pOnPress);
+        public CafeMenuItemButton(int pX, int pY, int pIndex, int pWidth, int pHeight, WidgetSprites pWidgetSprites, Button.OnPress pOnPress) {
+            super(pX, pY, pWidth, pHeight, pWidgetSprites, pOnPress);
             this.index = pIndex;
             this.visible = false;
         }
@@ -287,6 +287,20 @@ public class MenuSelectorScreen extends AbstractContainerScreen<MenuSelectorMenu
             return this.index;
         }
 
+        @Override
+        public void renderWidget(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+            int u = 176;
+            int v = 32;
+
+            if (!this.active) {
+                v += 16;
+
+            } else if (this.isHoveredOrFocused()) {
+                v += 16;
+            }
+
+            guiGraphics.blit(GUI_LOCATION, this.getX(), this.getY(), u, v, this.width, this.height, TEXTURE_WIDTH, TEXTURE_HEIGHT);
+        }
         public void renderToolTip(GuiGraphics pGuiGraphics, int pMouseX, int pMouseY) {
             if (this.isHovered && MenuSelectorScreen.this.cafeMenu.size() > this.index + MenuSelectorScreen.this.scrollOff) {
                 List<Component> tooltipList = new ArrayList<>(3);

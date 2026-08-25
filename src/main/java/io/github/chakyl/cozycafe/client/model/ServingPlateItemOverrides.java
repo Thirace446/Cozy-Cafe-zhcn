@@ -18,6 +18,7 @@ public class ServingPlateItemOverrides extends ItemOverrides {
     @Nullable
     @Override
     public BakedModel resolve(BakedModel pModel, ItemStack pStack, @Nullable ClientLevel pLevel, @Nullable LivingEntity pEntity, int pSeed) {
+
         ItemStack food = ServingPlateItem.getStoredFood(pStack);
         if (!food.isEmpty()) {
             return new ServingPlateModel(plateModel, food);

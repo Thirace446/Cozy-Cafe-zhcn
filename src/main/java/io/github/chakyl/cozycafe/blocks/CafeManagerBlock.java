@@ -1,14 +1,12 @@
 package io.github.chakyl.cozycafe.blocks;
 
+import io.github.chakyl.cozycafe.CozyRegistry;
 import io.github.chakyl.cozycafe.blockentities.CafeManagerBlockEntity;
 import io.github.chakyl.cozycafe.gui.CafeManagerMenu;
-import io.github.chakyl.cozycafe.registry.CozyRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
-import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.SimpleMenuProvider;
 import net.minecraft.world.entity.LivingEntity;
@@ -29,10 +27,11 @@ import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
 import net.minecraft.world.phys.BlockHitResult;
-import net.minecraftforge.network.NetworkHooks;
 
 import javax.annotation.Nullable;
 import java.util.List;
+
+import static io.github.chakyl.cozycafe.CozyRegistry.DataComponentsRegistry.CAFE_DATA;
 
 public class CafeManagerBlock extends Block implements EntityBlock {
     public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
@@ -68,18 +67,17 @@ public class CafeManagerBlock extends Block implements EntityBlock {
     public List<ItemStack> getDrops(BlockState pState, LootParams.Builder pBuilder) {
         List<ItemStack> drops = super.getDrops(pState, pBuilder);
 
-        BlockEntity blockEntity = pBuilder.getOptionalParameter(LootContextParams.BLOCK_ENTITY);
-        if (blockEntity instanceof CafeManagerBlockEntity cafeManager) {
+        if ( pBuilder.getOptionalParameter(LootContextParams.BLOCK_ENTITY) instanceof CafeManagerBlockEntity cafeManager) {
             for (ItemStack stack : drops) {
                 if (stack.getItem() == this.asItem()) {
                     CompoundTag customTag = new CompoundTag();
                     if (cafeManager.getMenu() != null) {
-                        customTag.put("menu", cafeManager.serializeMenuNBT());
+                        customTag.put("menu", cafeManager.serializeMenuNBT(pBuilder.getLevel().registryAccess()));
                     }
                     customTag.putInt("reputation", cafeManager.getReputation());
-                    customTag.putString("cafeName", cafeManager.getCafeName());
-                    customTag.putInt("dayLastOpened", cafeManager.getDayLastOpened());
-                    stack.addTagElement("cafeData", customTag);
+                    customTag.putString("cafe_name", cafeManager.getCafeName());
+                    customTag.putInt("day_last_opened", cafeManager.getDayLastOpened());
+                    stack.set(CAFE_DATA.get(), customTag);
                 }
             }
         }
@@ -90,23 +88,23 @@ public class CafeManagerBlock extends Block implements EntityBlock {
     public void setPlacedBy(Level pLevel, BlockPos pPos, BlockState pState, @Nullable LivingEntity pPlacer, ItemStack pStack) {
         super.setPlacedBy(pLevel, pPos, pState, pPlacer, pStack);
         if (pLevel.isClientSide) return;
-        if (pStack.hasTag() && pStack.getTag().contains("cafeData")) {
-            BlockEntity blockEntity = pLevel.getBlockEntity(pPos);
-            if (blockEntity instanceof CafeManagerBlockEntity cafeEntity) {
-                CompoundTag blockEntityNbt = pStack.getTag().getCompound("cafeData");
-                cafeEntity.load(blockEntityNbt);
+        if (!pStack.has(CAFE_DATA.get())) return;
+        CompoundTag blockEntityNbt = pStack.get(CAFE_DATA.get());
+        if (blockEntityNbt != null) {
+            if (pLevel.getBlockEntity(pPos) instanceof CafeManagerBlockEntity cafeEntity) {
+                cafeEntity.loadAdditional(blockEntityNbt, pLevel.registryAccess());
                 cafeEntity.setChanged();
             }
         }
     }
 
     @Override
-    public InteractionResult use(BlockState pState, Level pLevel, BlockPos pPos, Player pPlayer, InteractionHand pHand, BlockHitResult pHit) {
-        if (!pLevel.isClientSide) {
+    public InteractionResult useWithoutItem(BlockState pState, Level pLevel, BlockPos pPos, Player pPlayer, BlockHitResult pHit) {        if (!pLevel.isClientSide) {
             if (pLevel.getBlockEntity(pPos) instanceof CafeManagerBlockEntity cafeManagerBlockEntity) {
-                NetworkHooks.openScreen((ServerPlayer) pPlayer, new SimpleMenuProvider((cId, inv, playerEntity) -> new CafeManagerMenu(cId, inv, cafeManagerBlockEntity),
+                pPlayer.openMenu(new SimpleMenuProvider(
+                        (cId, inv, playerEntity) -> new CafeManagerMenu(cId, inv, cafeManagerBlockEntity),
                         Component.translatable("container.cozycafe.cafe_manager")
-                ), buffer -> {
+                ),buffer -> {
                     buffer.writeBlockPos(pPos);
                     List<ItemStack> menuList = cafeManagerBlockEntity.getMenu();
                     if (menuList == null) {
@@ -114,7 +112,7 @@ public class CafeManagerBlock extends Block implements EntityBlock {
                     } else {
                         buffer.writeInt(menuList.size());
                         for (ItemStack stack : menuList) {
-                            buffer.writeItem(stack);
+                            ItemStack.OPTIONAL_STREAM_CODEC.encode(buffer, stack);
                         }
                     }
                 });

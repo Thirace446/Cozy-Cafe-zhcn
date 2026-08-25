@@ -2,7 +2,6 @@ package io.github.chakyl.cozycafe.gui;
 
 
 import com.mojang.blaze3d.vertex.PoseStack;
-import io.github.chakyl.cozycafe.CozyCafe;
 import io.github.chakyl.cozycafe.data.CafeMenuItem;
 import io.github.chakyl.cozycafe.data.CafeMenuItemRegistry;
 import io.github.chakyl.cozycafe.network.*;
@@ -13,7 +12,7 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.ImageButton;
 import net.minecraft.client.gui.components.Tooltip;
-import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.components.WidgetSprites;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.FormattedText;
@@ -21,19 +20,20 @@ import net.minecraft.network.chat.Style;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import static io.github.chakyl.cozycafe.CozyCafe.loc;
 import static io.github.chakyl.cozycafe.util.GeneralUtils.formatPrice;
 
 
 @OnlyIn(Dist.CLIENT)
 public class CafeManagerScreen extends AbstractContainerScreen<CafeManagerMenu> {
 
-    private static final ResourceLocation GUI_LOCATION = new ResourceLocation(CozyCafe.MODID, "textures/gui/cafe_manager.png");
+    private static final ResourceLocation GUI_LOCATION = loc("textures/gui/cafe_manager.png");
     private static final int TEXTURE_WIDTH = 256;
     private static final int TEXTURE_HEIGHT = 256;
     int scrollOff;
@@ -46,6 +46,11 @@ public class CafeManagerScreen extends AbstractContainerScreen<CafeManagerMenu> 
     private EditBox nameField;
     private boolean isNameEditing = false;
     private ItemStack hoveredItemToRender = ItemStack.EMPTY;
+    private static final WidgetSprites EDIT_MENU_SPRITES = new WidgetSprites(GUI_LOCATION, GUI_LOCATION);
+    private static final WidgetSprites TOGGLE_OPEN_SPRITES = new WidgetSprites(GUI_LOCATION, GUI_LOCATION);
+    private static final WidgetSprites EDIT_NAME_SPRITES = new WidgetSprites(GUI_LOCATION, GUI_LOCATION);
+    private static final WidgetSprites SHOW_AREA_SPRITES = new WidgetSprites(GUI_LOCATION, GUI_LOCATION);
+    private static final WidgetSprites CLEAR_CAFE_SPRITES = new WidgetSprites(GUI_LOCATION, GUI_LOCATION);
 
     public CafeManagerScreen(CafeManagerMenu pMenu, Inventory pPlayerInventory, Component pTitle) {
         super(pMenu, pPlayerInventory, pTitle);
@@ -71,20 +76,21 @@ public class CafeManagerScreen extends AbstractContainerScreen<CafeManagerMenu> 
         int leftPos = this.getGuiLeft();
         int topPos = this.getGuiTop();
         cafeMenu = this.menu.getCafeMenu();
-        ImageButton editMenuButton = new ImageButton(leftPos + 20, topPos + 36, 17, 15, 224, 80, 16, GUI_LOCATION, 256, 256, (button) -> {
+
+        ImageButton editMenuButton = new ImageButton(leftPos + 20, topPos + 36, 17, 15, EDIT_MENU_SPRITES, (button) -> {
             if (!CafeManagerScreen.this.menu.getIsCafeOpen() && this.minecraft != null) {
                 EvilPacketsIHateThem.sendToServer(new ServerBoundOpenMenuSelectorMenuPacket(this.menu.blockEntity.getBlockPos()));
             }
-        }){
+        }) {
             @Override
             public void renderWidget(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-                super.renderWidget(guiGraphics, mouseX, mouseY, partialTick);
-                this.setTooltip(Tooltip.create(Component.translatable(CafeManagerScreen.this.menu.getIsCafeOpen() ? "tooltip.cozycafe.cafe_manager.cannot_edit":"gui.cozycafe.cafe_manager.edit_menu")));
+                guiGraphics.blit(GUI_LOCATION, this.getX(), this.getY(), 224, 80, this.width, this.height, 256, 256);
+                this.setTooltip(Tooltip.create(Component.translatable(CafeManagerScreen.this.menu.getIsCafeOpen() ? "tooltip.cozycafe.cafe_manager.cannot_edit" : "gui.cozycafe.cafe_manager.edit_menu")));
             }
         };
         this.addRenderableWidget(editMenuButton);
-        // hgate this
-        this.toggleOpenButton = new ImageButton(leftPos + 56, topPos + 192, 64, 24, 176, 0, 32, GUI_LOCATION, 256, 256, (button) -> {
+
+        this.toggleOpenButton = new ImageButton(leftPos + 56, topPos + 192, 64, 24, TOGGLE_OPEN_SPRITES, (button) -> {
             EvilPacketsIHateThem.sendToServer(new ServerBoundToggleCafeOpenPacket(this.menu.blockEntity.getBlockPos()));
         }) {
             @Override
@@ -104,7 +110,7 @@ public class CafeManagerScreen extends AbstractContainerScreen<CafeManagerMenu> 
         this.nameField.setVisible(false);
         this.addRenderableWidget(this.nameField);
 
-        ImageButton toggleEditButton = new ImageButton(leftPos + 146, topPos + 36, 15, 15, 176, 80, 16, GUI_LOCATION, 256, 256, (button) -> {
+        ImageButton toggleEditButton = new ImageButton(leftPos + 146, topPos + 36, 15, 15, EDIT_NAME_SPRITES, (button) -> {
             this.isNameEditing = !this.isNameEditing;
             this.nameField.setEditable(this.isNameEditing);
             this.nameField.setVisible(this.isNameEditing);
@@ -115,23 +121,38 @@ public class CafeManagerScreen extends AbstractContainerScreen<CafeManagerMenu> 
                 this.nameField.setValue(this.menu.getCafeName());
                 this.nameField.setFocused(true);
             }
-        });
+        }) {
+            @Override
+            public void renderWidget(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+                guiGraphics.blit(GUI_LOCATION, this.getX(), this.getY(), 176, 80, this.width, this.height, 256, 256);
+            }
+        };
         toggleEditButton.setTooltip(Tooltip.create(Component.translatable("gui.cozycafe.cafe_manager.edit_name")));
         this.addRenderableWidget(toggleEditButton);
 
-        ImageButton showAreaButton = new ImageButton(leftPos + this.imageWidth - 25, topPos + this.imageHeight - 29, 15, 15, 192, 80, 16, GUI_LOCATION, 256, 256, (button) -> {
+        ImageButton showAreaButton = new ImageButton(leftPos + this.imageWidth - 25, topPos + this.imageHeight - 29, 15, 15, SHOW_AREA_SPRITES, (button) -> {
             EvilPacketsIHateThem.sendToServer(new ServerBoundShowCafeAreaPacket(this.menu.blockEntity.getBlockPos()));
             this.onClose();
-        });
+        }) {
+            @Override
+            public void renderWidget(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+                guiGraphics.blit(GUI_LOCATION, this.getX(), this.getY(), 192, 80, this.width, this.height, 256, 256);
+            }
+        };
         showAreaButton.setTooltip(Tooltip.create(Component.translatable("gui.cozycafe.cafe_manager.show_area")));
         this.addRenderableWidget(showAreaButton);
 
-        ImageButton clearCafeButton = new ImageButton(leftPos + 13, topPos + this.imageHeight - 29, 15, 15, 208, 80, 16, GUI_LOCATION, 256, 256, (button) -> {
-            if (Screen.hasShiftDown()) {
+        ImageButton clearCafeButton = new ImageButton(leftPos + 13, topPos + this.imageHeight - 29, 15, 15, CLEAR_CAFE_SPRITES, (button) -> {
+            if (hasShiftDown()) {
                 EvilPacketsIHateThem.sendToServer(new ServerBoundClearCafePacket(this.menu.blockEntity.getBlockPos()));
                 this.onClose();
             }
-        });
+        }) {
+            @Override
+            public void renderWidget(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+                guiGraphics.blit(GUI_LOCATION, this.getX(), this.getY(), 208, 80, this.width, this.height, 256, 256);
+            }
+        };
         clearCafeButton.setTooltip(Tooltip.create(Component.translatable("gui.cozycafe.cafe_manager.clear_data")));
         this.addRenderableWidget(clearCafeButton);
     }
@@ -231,7 +252,7 @@ public class CafeManagerScreen extends AbstractContainerScreen<CafeManagerMenu> 
     @Override
     public void render(GuiGraphics pGuiGraphics, int pMouseX, int pMouseY, float pPartialTick) {
         this.hoveredItemToRender = ItemStack.EMPTY;
-        this.renderBackground(pGuiGraphics);
+        this.renderBackground(pGuiGraphics, pMouseX, pMouseY,  pPartialTick);
         super.render(pGuiGraphics, pMouseX, pMouseY, pPartialTick);
         this.renderTooltip(pGuiGraphics, pMouseX, pMouseY);
         if (this.errorMessage != null) {

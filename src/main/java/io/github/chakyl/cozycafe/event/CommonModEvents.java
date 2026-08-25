@@ -1,25 +1,23 @@
 package io.github.chakyl.cozycafe.event;
 
 import io.github.chakyl.cozycafe.CozyCafe;
+import io.github.chakyl.cozycafe.CozyRegistry;
 import io.github.chakyl.cozycafe.entities.CustomerEntity;
-import io.github.chakyl.cozycafe.network.EvilPacketsIHateThem;
-import io.github.chakyl.cozycafe.registry.CozyRegistry;
 import net.minecraft.world.entity.ai.attributes.Attributes;
-import net.minecraftforge.event.entity.EntityAttributeCreationEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.ModList;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.ModList;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
+import net.neoforged.neoforge.event.entity.EntityAttributeCreationEvent;
 
-@Mod.EventBusSubscriber(modid = CozyCafe.MODID, bus = Mod.EventBusSubscriber.Bus.MOD)
+@EventBusSubscriber(modid = CozyCafe.MODID)
 public class CommonModEvents {
     @SubscribeEvent
     public static void commonSetup(FMLCommonSetupEvent event) {
-        event.enqueueWork(() -> EvilPacketsIHateThem.register());
         event.enqueueWork(() -> CozyCafe.QUALITY_FOOD_INSTALLED = ModList.get().isLoaded("quality_food"));
         event.enqueueWork(() -> CozyCafe.KUBEJS_INSTALLED = ModList.get().isLoaded("kubejs"));
         event.enqueueWork(() -> CozyCafe.NUMISMATICS_INSTALLED = ModList.get().isLoaded("numismatics"));
-        event.enqueueWork(() -> CozyCafe.NUMISMATICS_UTILS_INSTALLED = ModList.get().isLoaded("numismatics_utils"));
+        event.enqueueWork(() -> CozyCafe.NUMISMATICS_UTILS_INSTALLED = ModList.get().isLoaded("numismaticsutils"));
         event.enqueueWork(() -> CozyCafe.EMI_INSTALLED = ModList.get().isLoaded("emi"));
 
     }

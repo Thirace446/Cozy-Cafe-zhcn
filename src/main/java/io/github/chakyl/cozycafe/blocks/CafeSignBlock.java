@@ -4,8 +4,6 @@ import io.github.chakyl.cozycafe.blockentities.CafeManagerBlockEntity;
 import io.github.chakyl.cozycafe.blockentities.CafeSignBlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.NbtUtils;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
@@ -27,6 +25,8 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 
 import javax.annotation.Nullable;
 import java.util.List;
+
+import static io.github.chakyl.cozycafe.CozyRegistry.DataComponentsRegistry.LINKED_MANAGER;
 
 public class CafeSignBlock extends Block implements EntityBlock {
     public static final BooleanProperty OPEN = BooleanProperty.create("open");
@@ -76,14 +76,12 @@ public class CafeSignBlock extends Block implements EntityBlock {
     public void setPlacedBy(Level level, BlockPos pos, BlockState state, @Nullable LivingEntity placer, ItemStack stack) {
         super.setPlacedBy(level, pos, state, placer, stack);
 
-        if (!level.isClientSide && stack.hasTag()) {
-            if (level.getBlockEntity(pos) instanceof CafeSignBlockEntity cafeSignBlockEntity) {
-                CompoundTag tag = stack.getTag();
-
-                if (tag.contains("linkedManager")) {
-                    BlockPos savedPos = NbtUtils.readBlockPos(tag.getCompound("linkedManager"));
-                    cafeSignBlockEntity.setLinkedManager(savedPos);
-                    if (level.getBlockEntity(savedPos) instanceof CafeManagerBlockEntity cafeManagerBlockEntity) {
+        if (!level.isClientSide) {
+            BlockPos linkedManager = stack.get(LINKED_MANAGER.get());
+            if (linkedManager != null) {
+                if (level.getBlockEntity(pos) instanceof CafeSignBlockEntity cafeSignBlockEntity) {
+                    cafeSignBlockEntity.setLinkedManager(linkedManager);
+                    if (level.getBlockEntity(linkedManager) instanceof CafeManagerBlockEntity cafeManagerBlockEntity) {
                         cafeManagerBlockEntity.setLinkedSign(pos);
 
                     }
@@ -99,8 +97,7 @@ public class CafeSignBlock extends Block implements EntityBlock {
         if (currentPos != null) {
             for (ItemStack stack : drops) {
                 if (stack.getItem() == this.asItem()) {
-                    CompoundTag tag = stack.getOrCreateTag();
-                    tag.put("linkedManager", NbtUtils.writeBlockPos(currentPos));
+                    stack.set(LINKED_MANAGER.get(), currentPos);
                 }
             }
         }

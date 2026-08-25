@@ -1,11 +1,11 @@
 package io.github.chakyl.cozycafe.gui;
 
+import io.github.chakyl.cozycafe.CozyRegistry;
 import io.github.chakyl.cozycafe.blockentities.CafeManagerBlockEntity;
 import io.github.chakyl.cozycafe.network.ClientBoundAddMenuItemPacket;
 import io.github.chakyl.cozycafe.network.EvilPacketsIHateThem;
-import io.github.chakyl.cozycafe.registry.CozyRegistry;
 import io.github.chakyl.cozycafe.util.MenuItemSelectionState;
-import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.player.Inventory;
@@ -25,12 +25,12 @@ public class MenuSelectorMenu extends AbstractContainerMenu {
     private final DataSlot menuItemAdditionStatus = DataSlot.standalone();
     private List<ItemStack> clientCafeMenu;
 
-    public MenuSelectorMenu(int pContainerId, Inventory pPlayerInventory, FriendlyByteBuf buf) {
+    public MenuSelectorMenu(int pContainerId, Inventory pPlayerInventory, RegistryFriendlyByteBuf buf) {
         this(pContainerId, pPlayerInventory, pPlayerInventory.player.level().getBlockEntity(buf.readBlockPos()));
         int size = buf.readInt();
         this.clientCafeMenu = new ArrayList<>();
         for (int i = 0; i < size; i++) {
-            this.clientCafeMenu.add(buf.readItem());
+            this.clientCafeMenu.add(ItemStack.STREAM_CODEC.decode(buf));
         }
     }
 

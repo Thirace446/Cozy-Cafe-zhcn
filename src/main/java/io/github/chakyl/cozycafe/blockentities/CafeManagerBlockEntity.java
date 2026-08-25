@@ -1,6 +1,7 @@
 package io.github.chakyl.cozycafe.blockentities;
 
 import io.github.chakyl.cozycafe.CozyCafe;
+import io.github.chakyl.cozycafe.CozyRegistry;
 import io.github.chakyl.cozycafe.blocks.CafeManagerBlock;
 import io.github.chakyl.cozycafe.data.CafeMenuItem;
 import io.github.chakyl.cozycafe.data.CafeMenuItemRegistry;
@@ -8,18 +9,17 @@ import io.github.chakyl.cozycafe.entities.CustomerEntity;
 import io.github.chakyl.cozycafe.gui.CafeManagerMenu;
 import io.github.chakyl.cozycafe.network.ClientBoundCafeCannotOpenPacket;
 import io.github.chakyl.cozycafe.network.EvilPacketsIHateThem;
-import io.github.chakyl.cozycafe.registry.CozyRegistry;
 import io.github.chakyl.cozycafe.util.CustomerEntityUtils;
 import io.github.chakyl.cozycafe.util.CustomerTarget;
 import io.github.chakyl.cozycafe.util.GeneralUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
-import net.minecraft.nbt.NbtUtils;
+import net.minecraft.nbt.NbtOps;
 import net.minecraft.nbt.Tag;
-import net.minecraft.network.Connection;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
@@ -359,13 +359,13 @@ public class CafeManagerBlockEntity extends BlockEntity implements MenuProvider 
         return this.menu;
     }
 
-    public Tag serializeMenuNBT() {
+    public Tag serializeMenuNBT(HolderLookup.Provider provider) {
         if (this.menu != null && !this.menu.isEmpty()) {
             this.sortMenuByCategory();
             ListTag menuList = new ListTag();
             for (ItemStack stack : this.menu) {
                 CompoundTag itemTag = new CompoundTag();
-                stack.save(itemTag);
+                menuList.add(stack.save(provider, new CompoundTag()));
                 menuList.add(itemTag);
             }
             return menuList;
@@ -454,52 +454,53 @@ public class CafeManagerBlockEntity extends BlockEntity implements MenuProvider 
     public void handleSuccessfulServe(CafeMenuItem menuItem, ItemStack handStack, double waitTimeDiff) {
         this.handleReputation(menuItem, handStack, waitTimeDiff);
     }
-
     @Override
-    protected void saveAdditional(CompoundTag nbt) {
-        super.saveAdditional(nbt);
-        nbt.putInt("attemptedCustomers", this.attemptedCustomers);
+    protected void saveAdditional(CompoundTag nbt, HolderLookup.Provider provider) {
+        super.saveAdditional(nbt, provider);
+        nbt.putInt("attempted_customers", this.attemptedCustomers);
         nbt.putBoolean("open", this.open);
-        nbt.putInt("dayLastOpened", this.dayLastOpened);
+        nbt.putInt("day_last_opened", this.dayLastOpened);
         nbt.putInt("reputation", this.reputation);
-        nbt.putString("cafeName", this.cafeName);
+        nbt.putString("cafe_name", this.cafeName);
+
         if (this.menu != null && !this.menu.isEmpty()) {
             this.sortMenuByCategory();
             ListTag menuList = new ListTag();
             for (ItemStack stack : this.menu) {
-                CompoundTag itemTag = new CompoundTag();
-                stack.save(itemTag);
-                menuList.add(itemTag);
+                menuList.add(stack.save(provider, new CompoundTag()));
             }
             nbt.put("menu", menuList);
         }
         if (this.linkedSign != null) {
-            nbt.put("LinkedSign", NbtUtils.writeBlockPos(this.linkedSign));
+            BlockPos.CODEC.encodeStart(NbtOps.INSTANCE, this.linkedSign).result().ifPresent(tag -> nbt.put("linked_sign", tag));
         }
     }
-
     @Override
-    public void load(CompoundTag nbt) {
-        super.load(nbt);
-        this.attemptedCustomers = nbt.getInt("attemptedCustomers");
+    public void loadAdditional(CompoundTag nbt, HolderLookup.Provider provider) {
+        super.loadAdditional(nbt, provider);
+        this.attemptedCustomers = nbt.getInt("attempted_customers");
         this.open = nbt.getBoolean("open");
-        this.dayLastOpened = nbt.getInt("dayLastOpened");
+        this.dayLastOpened = nbt.getInt("day_last_opened");
         this.reputation = nbt.getInt("reputation");
-        if (nbt.contains("cafeName", Tag.TAG_STRING)) {
-            this.cafeName = nbt.getString("cafeName");
+        if (nbt.contains("cafe_name", Tag.TAG_STRING)) {
+            this.cafeName = nbt.getString("cafe_name");
         }
         this.menu = new ArrayList<>();
         if (nbt.contains("menu", Tag.TAG_LIST)) {
             ListTag menuList = nbt.getList("menu", Tag.TAG_COMPOUND);
             for (Tag item : menuList) {
-                ItemStack stack = ItemStack.of((CompoundTag) item);
-                if (!stack.isEmpty()) {
-                    this.menu.add(stack);
+                if (item instanceof CompoundTag itemTag) {
+                    ItemStack.parse(provider, itemTag).ifPresent(stack -> {
+                        if (!stack.isEmpty()) {
+                            this.menu.add(stack);
+                        }
+                    });
                 }
             }
         }
-        if (nbt.contains("LinkedSign")) {
-            this.linkedSign = NbtUtils.readBlockPos(nbt.getCompound("LinkedSign"));
+
+        if (nbt.contains("linked_sign")) {
+            BlockPos.CODEC.parse(NbtOps.INSTANCE, nbt.get("linked_sign")).result().ifPresent(pos -> this.linkedSign = pos);
         }
     }
 
@@ -510,18 +511,9 @@ public class CafeManagerBlockEntity extends BlockEntity implements MenuProvider 
     }
 
     @Override
-    public CompoundTag getUpdateTag() {
+    public CompoundTag getUpdateTag(HolderLookup.Provider provider) {
         CompoundTag tag = new CompoundTag();
-        this.saveAdditional(tag);
+        this.saveAdditional(tag, provider);
         return tag;
     }
-
-    @Override
-    public void onDataPacket(Connection net, ClientboundBlockEntityDataPacket pkt) {
-        CompoundTag tag = pkt.getTag();
-        if (tag != null) {
-            this.load(tag);
-        }
-    }
-
 }

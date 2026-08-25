@@ -1,8 +1,8 @@
 package io.github.chakyl.cozycafe.gui;
 
+import io.github.chakyl.cozycafe.CozyRegistry;
 import io.github.chakyl.cozycafe.blockentities.CafeManagerBlockEntity;
-import io.github.chakyl.cozycafe.registry.CozyRegistry;
-import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
@@ -19,12 +19,12 @@ public class CafeManagerMenu extends AbstractContainerMenu {
     private final Level level;
     private List<ItemStack> clientCafeMenu;
 
-    public CafeManagerMenu(int pContainerId, Inventory pPlayerInventory, FriendlyByteBuf buf) {
+    public CafeManagerMenu(int pContainerId, Inventory pPlayerInventory, RegistryFriendlyByteBuf buf) {
         this(pContainerId, pPlayerInventory, pPlayerInventory.player.level().getBlockEntity(buf.readBlockPos()));
         int size = buf.readInt();
         this.clientCafeMenu = new ArrayList<>();
         for (int i = 0; i < size; i++) {
-            this.clientCafeMenu.add(buf.readItem());
+            this.clientCafeMenu.add(ItemStack.STREAM_CODEC.decode(buf));
         }
     }
 

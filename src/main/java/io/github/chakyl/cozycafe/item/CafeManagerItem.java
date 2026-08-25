@@ -1,15 +1,16 @@
 package io.github.chakyl.cozycafe.item;
 
 import net.minecraft.ChatFormatting;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
 import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
-import net.minecraft.world.level.Level;
+import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.level.block.Block;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
@@ -20,21 +21,19 @@ public class CafeManagerItem extends BlockItem {
     }
 
     @Override
-    public void appendHoverText(ItemStack pStack, @Nullable Level pLevel, List<Component> pTooltip, TooltipFlag pFlag) {
-        super.appendHoverText(pStack, pLevel, pTooltip, pFlag);
+    public void appendHoverText(ItemStack pStack, Item.TooltipContext pContext, List<Component> pTooltip, TooltipFlag pFlag) {
+        super.appendHoverText(pStack, pContext, pTooltip, pFlag);
 
-        CompoundTag tag = pStack.getTag();
-        if (tag != null && tag.contains("cafeData")) {
-            CompoundTag blockEntityTag = tag.getCompound("cafeData");
+        CustomData customData = pStack.get(DataComponents.CUSTOM_DATA);
+        if (customData != null && !customData.isEmpty() && customData.contains("cafe_data")) {
+            CompoundTag blockEntityTag = customData.copyTag().getCompound("cafe_data");
 
-            if (blockEntityTag.contains("cafeName")) {
-                pTooltip.add(Component.translatable("tooltip.cozycafe.cafe_manager.cafe_name", blockEntityTag.getString("cafeName")).withStyle(ChatFormatting.AQUA));
+            if (blockEntityTag.contains("cafe_name")) {
+                pTooltip.add(Component.translatable("tooltip.cozycafe.cafe_manager.cafe_name", blockEntityTag.getString("cafe_name")).withStyle(ChatFormatting.AQUA));
             }
             if (blockEntityTag.contains("reputation")) {
                 StringBuilder stars = new StringBuilder();
-                for (int i = 0; i < Mth.clamp((int) Math.floor((double) blockEntityTag.getInt("reputation") / 1000), 0, 5); i++) {
-                    stars.append("★");
-                }
+                stars.append("★".repeat(Math.max(0, Mth.clamp((int) Math.floor((double) blockEntityTag.getInt("reputation") / 1000), 0, 5))));
                 if (stars.isEmpty()) {
                     pTooltip.add(Component.translatable("tooltip.cozycafe.cafe_manager.no_reputation").withStyle(ChatFormatting.RED));
                 } else {

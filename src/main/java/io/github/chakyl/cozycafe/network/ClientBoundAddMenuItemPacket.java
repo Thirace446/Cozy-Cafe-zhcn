@@ -1,42 +1,31 @@
 package io.github.chakyl.cozycafe.network;
 
-import io.github.chakyl.cozycafe.gui.MenuSelectorMenu;
-import net.minecraft.client.Minecraft;
-import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.world.entity.player.Player;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.network.NetworkEvent;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
 
-import java.util.function.Supplier;
+import static io.github.chakyl.cozycafe.CozyCafe.loc;
+import static io.github.chakyl.cozycafe.network.ClientNetworkUtils.handleAddMenuItemClient;
 
-public class ClientBoundAddMenuItemPacket {
-    private final ItemStack itemStack;
+public record ClientBoundAddMenuItemPacket(ItemStack itemStack) implements CustomPacketPayload {
+    public static final Type<ClientBoundAddMenuItemPacket> TYPE = new Type<>(loc("add_menu_item"));
 
-    public ClientBoundAddMenuItemPacket(ItemStack itemStack) {
-        this.itemStack = itemStack;
+    public static final StreamCodec<RegistryFriendlyByteBuf, ClientBoundAddMenuItemPacket> STREAM_CODEC = StreamCodec.composite(
+            ItemStack.STREAM_CODEC,
+            ClientBoundAddMenuItemPacket::itemStack,
+            ClientBoundAddMenuItemPacket::new
+    );
+
+    @Override
+    public Type<? extends CustomPacketPayload> type() {
+        return TYPE;
     }
 
-    public ClientBoundAddMenuItemPacket(FriendlyByteBuf buffer) {
-        this.itemStack = buffer.readItem();
-    }
-
-    public void encode(FriendlyByteBuf buffer) {
-        buffer.writeItem(this.itemStack);
-    }
-
-    public void handle(Supplier<NetworkEvent.Context> supplier) {
-        NetworkEvent.Context context = supplier.get();
-        context.enqueueWork(() -> ClientPacketHandler.handleAddItem(this.itemStack));
-        context.setPacketHandled(true);
-    }
-
-    private static class ClientPacketHandler {
-        private static void handleAddItem(ItemStack stack) {
-            Player player = Minecraft.getInstance().player;
-            if (player == null) return;
-            if (player.containerMenu instanceof MenuSelectorMenu clientMenu) {
-                clientMenu.addToClientMenu(stack);
-            }
-        }
+    public static void handle(ClientBoundAddMenuItemPacket packet, IPayloadContext context) {
+        context.enqueueWork(() -> {
+            handleAddMenuItemClient(packet);
+        });
     }
 }

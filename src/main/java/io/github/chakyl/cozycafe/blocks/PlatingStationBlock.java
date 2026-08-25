@@ -4,8 +4,9 @@ import io.github.chakyl.cozycafe.blockentities.PlatingStationBlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.InteractionResult;
+import net.minecraft.world.ItemInteractionResult;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
@@ -43,11 +44,11 @@ public class PlatingStationBlock extends Block implements EntityBlock {
     }
 
     @Override
-    public InteractionResult use(BlockState pState, Level pLevel, BlockPos pPos, Player pPlayer, InteractionHand pHand, BlockHitResult pHit) {
+    public ItemInteractionResult useItemOn(ItemStack pStack, BlockState pState, Level pLevel, BlockPos pPos, Player pPlayer, InteractionHand pHand, BlockHitResult pHit) {
         if (pLevel.getBlockEntity(pPos) instanceof PlatingStationBlockEntity platingStationBlockEntity) {
-            InteractionResult interactionResult = platingStationBlockEntity.handlePlating(pLevel, pPlayer, pHand);
+            ItemInteractionResult interactionResult = platingStationBlockEntity.handlePlating(pLevel, pPlayer, pHand);
             if (interactionResult != null) return interactionResult;
         }
-        return InteractionResult.PASS;
+        return ItemInteractionResult.SUCCESS;
     }
 }
