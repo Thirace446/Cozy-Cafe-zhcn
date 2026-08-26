@@ -1,7 +1,7 @@
 {
   "values": [
-    "#forge:crops",
-    "#forge:seeds",
+    "#c:crops",
+    "#c:seeds",
     "minecraft:dried_kelp",
     "minecraft:beef",
     "minecraft:porkchop",

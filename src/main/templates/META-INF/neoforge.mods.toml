@@ -81,10 +81,10 @@ side="BOTH"
 
 # Here's another dependency
 [[dependencies.${mod_id}]]
-modId="minecraft"
+modId="placebo"
 type="required"
 # This version range declares a minimum of the current minecraft version up to but not including the next major version
-versionRange="${minecraft_version_range}"
+versionRange="[9.9.2,)"
 ordering="NONE"
 side="BOTH"
 

@@ -3,8 +3,10 @@ package io.github.chakyl.cozycafe.data;
 import com.google.common.base.Preconditions;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -40,7 +42,7 @@ public record CafeMenuItem(Item item, MenuItemCategory category, String multAttr
                             }
                     ).forGetter(CafeMenuItem::category),
                     Codec.STRING.optionalFieldOf("mult_attribute", "").forGetter(CafeMenuItem::multAttribute),
-                    Codec.intRange(1, Integer.MAX_VALUE).fieldOf("price").orElse(1).forGetter(CafeMenuItem::price),
+                    Codec.intRange(1, Integer.MAX_VALUE).fieldOf("price").orElse(-1).forGetter(CafeMenuItem::price),
                     Codec.BOOL.optionalFieldOf("bowl_food", false).forGetter(CafeMenuItem::bowlFood),
                     BuiltInRegistries.ITEM.byNameCodec().optionalFieldOf("bowl", Items.BOWL).forGetter(CafeMenuItem::bowl),
                     Codec.BOOL.optionalFieldOf("bottle_drink", false).forGetter(CafeMenuItem::bottleDrink),
@@ -48,7 +50,10 @@ public record CafeMenuItem(Item item, MenuItemCategory category, String multAttr
                     Codec.STRING.listOf().optionalFieldOf("themes", List.of()).forGetter(CafeMenuItem::themes),
                     Codec.STRING.listOf().optionalFieldOf("flavors", List.of()).forGetter(CafeMenuItem::flavors)
             )
-            .apply(inst, CafeMenuItem::new));
+            .apply(inst, (item, category, multAttribute, price, bowlFood, bowl, bottleDrink, bottle, themes, flavors) -> {
+                int finalPrice = price == -1 ? getGeneratedPrice(item.getDefaultInstance()) : price;
+                return new CafeMenuItem(item, category, multAttribute, finalPrice, bowlFood, bowl, bottleDrink, bottle, themes, flavors);
+            }));
 
     public CafeMenuItem(CafeMenuItem other) {
         this(other.item, other.category, other.multAttribute, other.price, other.bowlFood, other.bowl, other.bottleDrink, other.bottle, other.themes, other.flavors);
@@ -59,6 +64,14 @@ public record CafeMenuItem(Item item, MenuItemCategory category, String multAttr
         Preconditions.checkNotNull(this.item, "Invalid item ID!");
         Preconditions.checkNotNull(this.category, "Invalid category!");
         return this;
+    }
+
+    private static int getGeneratedPrice(ItemStack food) {
+        FoodProperties foodProperties = food.get(DataComponents.FOOD);
+        if (foodProperties != null) {
+            return Math.max(1, Math.round(foodProperties.nutrition() + (foodProperties.saturation() * 3)));
+        }
+        return 1;
     }
 
     @Override
