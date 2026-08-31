@@ -28,6 +28,7 @@ import java.util.List;
 
 import static io.github.chakyl.cozycafe.CozyCafe.loc;
 import static io.github.chakyl.cozycafe.util.GeneralUtils.formatPrice;
+import static io.github.chakyl.cozycafe.util.GeneralUtils.getMenuItemTooltip;
 
 
 @OnlyIn(Dist.CLIENT)
@@ -131,7 +132,7 @@ public class CafeManagerScreen extends AbstractContainerScreen<CafeManagerMenu> 
         this.addRenderableWidget(toggleEditButton);
 
         ImageButton showAreaButton = new ImageButton(leftPos + this.imageWidth - 25, topPos + this.imageHeight - 29, 15, 15, SHOW_AREA_SPRITES, (button) -> {
-            EvilPacketsIHateThem.sendToServer(new ServerBoundShowCafeAreaPacket(this.menu.blockEntity.getBlockPos()));
+            EvilPacketsIHateThem.sendToServer(new ServerBoundToggleCafeAreaPacket(this.menu.blockEntity.getBlockPos()));
             this.onClose();
         }) {
             @Override
@@ -139,7 +140,7 @@ public class CafeManagerScreen extends AbstractContainerScreen<CafeManagerMenu> 
                 guiGraphics.blit(GUI_LOCATION, this.getX(), this.getY(), 192, 80, this.width, this.height, 256, 256);
             }
         };
-        showAreaButton.setTooltip(Tooltip.create(Component.translatable("gui.cozycafe.cafe_manager.show_area")));
+        showAreaButton.setTooltip(Tooltip.create(Component.translatable("gui.cozycafe.cafe_manager." + (this.menu.isShowingArea() ? "hide" : "show")+ "_area")));
         this.addRenderableWidget(showAreaButton);
 
         ImageButton clearCafeButton = new ImageButton(leftPos + 13, topPos + this.imageHeight - 29, 15, 15, CLEAR_CAFE_SPRITES, (button) -> {
@@ -261,16 +262,7 @@ public class CafeManagerScreen extends AbstractContainerScreen<CafeManagerMenu> 
         if (!this.hoveredItemToRender.isEmpty()) {
             CafeMenuItem cafeMenuItem = CafeMenuItemRegistry.INSTANCE.getForItem(this.hoveredItemToRender.getItem());
             if (cafeMenuItem != null) {
-                List<Component> tooltipList = new ArrayList<>(getTooltipFromItem(Minecraft.getInstance(), this.hoveredItemToRender));
-                tooltipList.add(Component.translatable("gui.cozycafe.menu_selector.price", formatPrice(cafeMenuItem.price())));
-                tooltipList.add(Component.translatable("gui.cozycafe.menu_selector.item_category", Component.translatable("category.cozycafe." + cafeMenuItem.category().toString().toLowerCase()).getString()).withStyle(ChatFormatting.GRAY));
-
-                if (cafeMenuItem.bowlFood()) {
-                    tooltipList.add(Component.translatable("gui.cozycafe.menu_selector.bowl_food").withStyle(ChatFormatting.GRAY));
-                }
-                if (cafeMenuItem.bottleDrink()) {
-                    tooltipList.add(Component.translatable("gui.cozycafe.menu_selector.bottle_drink").withStyle(ChatFormatting.RED));
-                }
+                final List<Component> tooltipList = getMenuItemTooltip(cafeMenuItem.item().getDefaultInstance(), cafeMenuItem);
                 pGuiGraphics.renderTooltip(this.font, tooltipList, this.hoveredItemToRender.getTooltipImage(), pMouseX, pMouseY);
             }
         }

@@ -3,10 +3,13 @@ package io.github.chakyl.cozycafe.util;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
+import io.github.chakyl.cozycafe.data.CafeMenuItem;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.resources.model.BakedModel;
+import net.minecraft.network.chat.Component;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemDisplayContext;
@@ -16,8 +19,14 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.neoforge.client.ChunkRenderTypeSet;
 import net.neoforged.neoforge.client.model.data.ModelData;
+import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import static net.minecraft.client.gui.screens.Screen.getTooltipFromItem;
 
 public class GeneralUtils {
 
@@ -55,6 +64,29 @@ public class GeneralUtils {
         }
         return out.toString();
     }
+
+    public static @NotNull List<Component> getMenuItemTooltip(ItemStack itemStack, CafeMenuItem cafeMenuItem) {
+        List<Component> tooltipList = new ArrayList<>(getTooltipFromItem(Minecraft.getInstance(), itemStack));
+        tooltipList.add(Component.literal(Component.translatable("gui.cozycafe.menu_selector.price", cafeMenuItem.price()).getString() + " | "+ Component.translatable("category.cozycafe." + cafeMenuItem.category().toString().toLowerCase()).getString()));
+        if (!cafeMenuItem.flavors().isEmpty()) {
+            tooltipList.add(Component.translatable("gui.cozycafe.menu_selector.flavors", cafeMenuItem.flavors().stream()
+                    .map(flavor -> Component.translatable("flavor.cozycafe." + flavor).getString())
+                    .collect(Collectors.joining(", "))).withStyle(ChatFormatting.GRAY));
+        }
+        if (!cafeMenuItem.themes().isEmpty()) {
+            tooltipList.add(Component.translatable("gui.cozycafe.menu_selector.themes", cafeMenuItem.themes().stream()
+                    .map(flavor -> Component.translatable("theme.cozycafe." + flavor).getString())
+                    .collect(Collectors.joining(", "))).withStyle(ChatFormatting.GRAY));
+        }
+        if (cafeMenuItem.bowlFood()) {
+            tooltipList.add(Component.translatable("gui.cozycafe.menu_selector.bowl_food").withStyle(ChatFormatting.GREEN));
+        }
+        if (cafeMenuItem.bottleDrink()) {
+            tooltipList.add(Component.translatable("gui.cozycafe.menu_selector.bottle_drink").withStyle(ChatFormatting.RED));
+        }
+        return tooltipList;
+    }
+
 
     // TODO: Find a way to merge renderFood and getFoodModel into just one public method?
 

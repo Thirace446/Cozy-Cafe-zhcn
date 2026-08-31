@@ -45,9 +45,9 @@ public class EvilPacketsIHateThem {
         );
 
         registrar.playToServer(
-                ServerBoundShowCafeAreaPacket.TYPE,
-                ServerBoundShowCafeAreaPacket.STREAM_CODEC,
-                ServerBoundShowCafeAreaPacket::handle
+                ServerBoundToggleCafeAreaPacket.TYPE,
+                ServerBoundToggleCafeAreaPacket.STREAM_CODEC,
+                ServerBoundToggleCafeAreaPacket::handle
         );
 
         registrar.playToServer(
