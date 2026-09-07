@@ -61,6 +61,12 @@ mandatory = true
 versionRange = "[8.6.3,)" #
 ordering = "AFTER"
 side = "BOTH"
+[[dependencies.starcatcher]]
+modId="libtooltips"
+mandatory=false #mandatory
+versionRange="[2.0,)"
+ordering="AFTER"
+side="CLIENT"
 # Here's another dependency
 [[dependencies.${ mod_id }]]
 modId = "minecraft"

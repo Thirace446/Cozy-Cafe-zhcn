@@ -137,6 +137,12 @@ repositories {
             includeGroup("com.eliotlash.mclib")
         }
     }
+    maven {
+        url "https://api.modrinth.com/maven"
+        content {
+            includeGroup "maven.modrinth"
+        }
+    }
     maven { url = 'https://maven.parchmentmc.org' }
     mavenCentral()
 }
@@ -162,11 +168,9 @@ dependencies {
     implementation fg.deobf("curse.maven:create-328085:7178761")
     implementation fg.deobf("curse.maven:curios-309927:6418456")
     // LibTooltips
-    implementation fg.deobf("curse.maven:libtooltips-1370245:8332581")
-    jarJar("curse.maven:libtooltips-1370245:8332581") {
-        // Tells JarJar to use a valid Maven range for the manifest metadata,
-        // preventing the version specification crash.
-        jarJar.ranged(it, '[8332581,)')
+    implementation fg.deobf("maven.modrinth:libtooltips:2.3-FORGE-1.20.1")
+    jarJar("maven.modrinth:libtooltips:2.3-FORGE-1.20.1"){
+        jarJar.ranged(it, '[2.0,)')
     }
 }
 
@@ -176,11 +180,11 @@ dependencies {
 // See https://docs.gradle.org/current/dsl/org.gradle.language.jvm.tasks.ProcessResources.html
 tasks.named('processResources', ProcessResources).configure {
     var replaceProperties = [
-            minecraft_version: minecraft_version, minecraft_version_range: minecraft_version_range,
-            forge_version: forge_version, forge_version_range: forge_version_range,
+            minecraft_version   : minecraft_version, minecraft_version_range: minecraft_version_range,
+            forge_version       : forge_version, forge_version_range: forge_version_range,
             loader_version_range: loader_version_range,
-            mod_id: mod_id, mod_name: mod_name, mod_license: mod_license, mod_version: mod_version,
-            mod_authors: mod_authors, mod_description: mod_description,
+            mod_id              : mod_id, mod_name: mod_name, mod_license: mod_license, mod_version: mod_version,
+            mod_authors         : mod_authors, mod_description: mod_description,
     ]
     inputs.properties replaceProperties
 
