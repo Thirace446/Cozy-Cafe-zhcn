@@ -1,0 +1,27 @@
+{
+  "theme_id": "fancy",
+  "theme_name": {
+    "translate": "theme.cozycafe.fancy"
+  },
+  "modifiers": [
+    {
+      "tip": {
+        "value": 0.25,
+        "action": "multiply"
+      },
+      "price": {
+        "value": 2,
+        "action": "multiply"
+      },
+      "patience": {
+        "value": 0.75,
+        "action": "multiply"
+      },
+      "customer_impact": {
+        "value": 0.75,
+        "action": "multiply"
+      }
+    }
+  ],
+  "min_decor_items": 5
+}

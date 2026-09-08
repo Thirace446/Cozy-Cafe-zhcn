@@ -6,6 +6,8 @@ import io.github.chakyl.cozycafe.blockentities.renderer.CafeAreaRenderer;
 import io.github.chakyl.cozycafe.blocks.CafeManagerBlock;
 import io.github.chakyl.cozycafe.data.CafeMenuItem;
 import io.github.chakyl.cozycafe.data.CafeMenuItemRegistry;
+import io.github.chakyl.cozycafe.data.CafeTheme;
+import io.github.chakyl.cozycafe.data.CafeThemeRegistry;
 import io.github.chakyl.cozycafe.entities.CustomerEntity;
 import io.github.chakyl.cozycafe.gui.CafeManagerMenu;
 import io.github.chakyl.cozycafe.network.ClientBoundCafeCannotOpenPacket;
@@ -229,6 +231,7 @@ public class CafeManagerBlockEntity extends BlockEntity implements MenuProvider 
         if (this.level.isClientSide() && this.showingArea) {
             CafeAreaRenderer.addBox(this.worldPosition, this.getAreaBox());
         }
+        CafeTheme theme = CafeThemeRegistry.INSTANCE.getForID("fancy");
     }
 
     public int getAttemptedCustomers() {

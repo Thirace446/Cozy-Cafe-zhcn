@@ -97,5 +97,9 @@
   "gui.cozycafe.menu_selector.bowl_food": "Bowl food, no plating needed",
   "gui.cozycafe.menu_selector.bottle_drink": "Drops bottle when consumed",
   "gui.cozycafe.menu_selector.stars_required": "Minimum menu size: %s",
-  "gui.cozycafe.menu_selector.place_items": "Place item to add"
+  "gui.cozycafe.menu_selector.place_items": "Place item to add",
+  "command.cozycafe.add_user.success": "Added player %s to customer usernames config",
+  "command.cozycafe.add_user.fail": "%s is already in the config!",
+  "command.cozycafe.remove_user.success": "Removed %s from customer config...",
+  "command.cozycafe.remove_user.fail": "%s is alredy not in the config!"
 }

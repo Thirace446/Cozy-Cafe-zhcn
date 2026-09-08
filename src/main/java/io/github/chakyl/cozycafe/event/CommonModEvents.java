@@ -2,12 +2,14 @@ package io.github.chakyl.cozycafe.event;
 
 import io.github.chakyl.cozycafe.CozyCafe;
 import io.github.chakyl.cozycafe.CozyRegistry;
+import io.github.chakyl.cozycafe.command.ModifyCustomerSkinCommand;
 import io.github.chakyl.cozycafe.entities.CustomerEntity;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.ModList;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
+import net.neoforged.neoforge.event.RegisterCommandsEvent;
 import net.neoforged.neoforge.event.entity.EntityAttributeCreationEvent;
 
 @EventBusSubscriber(modid = CozyCafe.MODID)
@@ -25,5 +27,10 @@ public class CommonModEvents {
     @SubscribeEvent
     public static void registerAttributes(EntityAttributeCreationEvent event) {
         event.put(CozyRegistry.EntityRegistry.CUSTOMER.get(), CustomerEntity.createMobAttributes().add(Attributes.MAX_HEALTH, 20.0D).add(Attributes.MOVEMENT_SPEED, 0.25D).add(Attributes.FOLLOW_RANGE, 32.0D).build());
+    }
+
+    @SubscribeEvent
+    public static void onRegisterCommands(RegisterCommandsEvent event) {
+        ModifyCustomerSkinCommand.register(event.getDispatcher());
     }
 }
