@@ -231,7 +231,6 @@ public class CafeManagerBlockEntity extends BlockEntity implements MenuProvider 
         if (this.level.isClientSide() && this.showingArea) {
             CafeAreaRenderer.addBox(this.worldPosition, this.getAreaBox());
         }
-        CafeTheme theme = CafeThemeRegistry.INSTANCE.getForID("fancy");
     }
 
     public int getAttemptedCustomers() {

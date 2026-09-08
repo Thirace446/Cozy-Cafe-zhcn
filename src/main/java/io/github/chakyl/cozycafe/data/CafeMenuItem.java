@@ -33,13 +33,13 @@ public record CafeMenuItem(Item item, MenuItemCategory category, String multAttr
     public static final Codec<CafeMenuItem> CODEC = RecordCodecBuilder.create(inst -> inst
             .group(
                     BuiltInRegistries.ITEM.byNameCodec().fieldOf("item").forGetter(CafeMenuItem::item),
-                    Codec.STRING.optionalFieldOf("category", "default").xmap(
+                    Codec.STRING.optionalFieldOf("category", ",main").xmap(
                             s -> switch (s.toLowerCase()) {
                                 case "dessert" -> MenuItemCategory.DESSERT;
                                 case "drink" -> MenuItemCategory.DRINK;
                                 default -> MenuItemCategory.MAIN;
                             },
-                            style -> switch (style) {
+                            menuItemCategory -> switch (menuItemCategory) {
                                 case DESSERT -> "dessert";
                                 case DRINK -> "drink";
                                 default -> "main";

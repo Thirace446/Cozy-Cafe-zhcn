@@ -2,32 +2,32 @@ package io.github.chakyl.cozycafe.cafemodifiers;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import io.github.chakyl.cozycafe.data.CafeMenuItem;
+import io.github.chakyl.cozycafe.data.CafeTheme;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.ComponentSerialization;
 
 import java.util.List;
-import java.util.Optional;
 
 public class CafeModifier {
+    private String modifierId;
     private Component modifierName;
     private ModifierType type;
-    private List<String> themesImpacted;
+    private List<String> decorThemes;
     private List<String> flavorsImpacted;
-    private ModifierAction tip;
-    private ModifierAction price;
-    private ModifierAction customerImpact;
-    private ModifierAction patience;
+    private int maxModifierCount;
+    private CafeModifierActions modifierActions;
 
-    public CafeModifier(Component modifierName, ModifierType type, List<String> themesImpacted, List<String> flavorsImpacted, ModifierAction tip, ModifierAction price, ModifierAction customerImpact, ModifierAction patience) {
+    public CafeModifier(String modifierId, Component modifierName, ModifierType type, List<String> decorThemes, List<String> flavorsImpacted, int maxModifierCount, CafeModifierActions modifierActions) {
+        this.modifierId = modifierId;
         this.modifierName = modifierName;
         this.type = type;
-        this.themesImpacted = themesImpacted;
+        this.decorThemes = decorThemes;
         this.flavorsImpacted = flavorsImpacted;
-        this.tip = tip;
-        this.price = price;
-        this.customerImpact = customerImpact;
-        this.patience = patience;
+        this.maxModifierCount = maxModifierCount;
+        this.modifierActions = modifierActions;
     }
+
 
     public void setModifierName(Component modifierName) {
         this.modifierName = modifierName;
@@ -37,31 +37,37 @@ public class CafeModifier {
         this.type = type;
     }
 
-    public void setThemesImpacted(List<String> themesImpacted) {
-        this.themesImpacted = themesImpacted;
+    public void setDecorThemes(List<String> decorThemes) {
+        this.decorThemes = decorThemes;
     }
 
     public void setFlavorsImpacted(List<String> flavorsImpacted) {
         this.flavorsImpacted = flavorsImpacted;
     }
 
-    public void setTip(ModifierAction tip) {
-        this.tip = tip;
+    public String getModifierId() {
+        return modifierId;
     }
 
-    public void setPrice(ModifierAction price) {
-        this.price = price;
+    public void setModifierId(String modifierId) {
+        this.modifierId = modifierId;
     }
 
-
-    public void setCustomerImpact(ModifierAction customerImpact) {
-        this.customerImpact = customerImpact;
+    public int getMaxModifierCount() {
+        return maxModifierCount;
     }
 
-    public void setPatience(ModifierAction patience) {
-        this.patience = patience;
+    public void setMaxModifierCount(int maxModifierCount) {
+        this.maxModifierCount = maxModifierCount;
     }
 
+    public CafeModifierActions getModifierActions() {
+        return modifierActions;
+    }
+
+    public void setModifierActions(CafeModifierActions modifierActions) {
+        this.modifierActions = modifierActions;
+    }
 
     public Component getModifierName() {
         return modifierName;
@@ -71,40 +77,31 @@ public class CafeModifier {
         return type;
     }
 
-    public List<String> getThemesImpacted() {
-        return themesImpacted;
+    public List<String> getDecorThemes() {
+        return decorThemes;
     }
 
     public List<String> getFlavorsImpacted() {
-        return flavorsImpacted;
-    }
-
-    public ModifierAction getTip() {
-        return tip;
-    }
-
-    public ModifierAction getPrice() {
-        return price;
-    }
-
-    public ModifierAction getCustomerImpact() {
-        return customerImpact;
-    }
-
-    public ModifierAction getPatience() {
-        return patience;
+        return type == ModifierType.DECOR ? flavorsImpacted : List.of();
     }
 
     public static final Codec<CafeModifier> CODEC = RecordCodecBuilder.create(inst -> inst.group(
+            Codec.STRING.fieldOf("modifier_id").forGetter(CafeModifier::getModifierId),
             ComponentSerialization.CODEC.optionalFieldOf("modifier_name", Component.empty()).forGetter(CafeModifier::getModifierName),
+            Codec.STRING.optionalFieldOf("type", "default").xmap(
+                    s -> switch (s.toLowerCase()) {
+                        case "decor" -> ModifierType.THEME;
+                        default -> ModifierType.DECOR;
+                    },
+                    modifierType -> switch (modifierType) {
+                        case THEME -> "theme";
+                        default -> "decor";
+                    }
+            ).forGetter(CafeModifier::getType),
             Codec.STRING.listOf().optionalFieldOf("flavors_impacted", List.of()).forGetter(CafeModifier::getFlavorsImpacted),
-            Codec.STRING.listOf().optionalFieldOf("themes_impacted", List.of()).forGetter(CafeModifier::getThemesImpacted),
-            ModifierAction.CODEC.optionalFieldOf("tip").xmap(opt -> opt.orElse(null), Optional::ofNullable).forGetter(CafeModifier::getTip),
-            ModifierAction.CODEC.optionalFieldOf("price").xmap(opt -> opt.orElse(null), Optional::ofNullable).forGetter(CafeModifier::getPrice),
-            ModifierAction.CODEC.optionalFieldOf("customer_impact").xmap(opt -> opt.orElse(null), Optional::ofNullable).forGetter(CafeModifier::getCustomerImpact),
-            ModifierAction.CODEC.optionalFieldOf("patience").xmap(opt -> opt.orElse(null), Optional::ofNullable).forGetter(CafeModifier::getPatience)
-    ).apply(inst, (name, flavorsImpacted, themesImpacted, tip, price, customerImpact, patience) ->
-            new CafeModifier(name, ModifierType.THEME, themesImpacted, flavorsImpacted, tip, price, customerImpact, patience)
-    ));
+            Codec.STRING.listOf().optionalFieldOf("themes_impacted", List.of()).forGetter(CafeModifier::getDecorThemes),
+            Codec.intRange(1, 64).fieldOf("max_modifier_count").orElse(1).forGetter(CafeModifier::getMaxModifierCount),
+            CafeModifierActions.CODEC.fieldOf("modifier_actions").forGetter(CafeModifier::getModifierActions)
+    ).apply(inst, CafeModifier::new));
 
 }
