@@ -2,8 +2,12 @@ package io.github.chakyl.cozycafe.blockentities;
 
 import io.github.chakyl.cozycafe.CozyCafe;
 import io.github.chakyl.cozycafe.CozyRegistry;
+import io.github.chakyl.cozycafe.DataMapRegistry;
 import io.github.chakyl.cozycafe.blockentities.renderer.CafeAreaRenderer;
 import io.github.chakyl.cozycafe.blocks.CafeManagerBlock;
+import io.github.chakyl.cozycafe.cafemodifiers.CafeModifier;
+import io.github.chakyl.cozycafe.cafemodifiers.CafeModifiers;
+import io.github.chakyl.cozycafe.cafemodifiers.DecorBlock;
 import io.github.chakyl.cozycafe.data.CafeMenuItem;
 import io.github.chakyl.cozycafe.data.CafeMenuItemRegistry;
 import io.github.chakyl.cozycafe.data.CafeTheme;
@@ -18,7 +22,6 @@ import io.github.chakyl.cozycafe.util.GeneralUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.NbtOps;
@@ -41,9 +44,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 import static io.github.chakyl.cozycafe.util.QualityFoods.getQualityIncrease;
 import static java.util.Comparator.comparingInt;
@@ -61,10 +62,11 @@ public class CafeManagerBlockEntity extends BlockEntity implements MenuProvider 
     private String cafeName = "Cozy Cafe";
     private List<ItemStack> menu;
     private AABB cafeAreaRender = null;
+    private CafeTheme activeTheme;
+    private CafeModifiers cafeModifiers;
 
     public CafeManagerBlockEntity(BlockPos pos, BlockState state) {
         super(CozyRegistry.BlockEntityRegistry.CAFE_MANAGER.get(), pos, state);
-
     }
 
     public void tick(Level level, BlockPos pos, BlockState state) {
@@ -95,6 +97,51 @@ public class CafeManagerBlockEntity extends BlockEntity implements MenuProvider 
         Direction facing = state.getValue(CafeManagerBlock.FACING);
         return pos.relative(facing.getOpposite(), 6 + addedRange).above(stars > 2 ? Math.min(3, stars - 1) : 1).relative(facing.getClockWise(), (3 + addedRange) / 2);
     }
+
+    public List<DecorBlock> getDecorInArea(Level level, BlockPos pos, BlockState state) {
+        if (!(level instanceof ServerLevel serverLevel)) return List.of();
+        List<DecorBlock> validDecor = new ArrayList<>();
+        for (BlockPos scannedPos : BlockPos.betweenClosedStream(this.getFirstPos(state, pos), this.getSecondPos(state, pos)).map(BlockPos::immutable).toList()) {
+            if (!serverLevel.isLoaded(scannedPos)) continue;
+            BlockState scannedState = serverLevel.getBlockState(scannedPos);
+            DecorBlock decorBlock = scannedState.getBlockHolder().getData(DataMapRegistry.DECOR);
+            if (decorBlock != null) {
+                if (Collections.frequency(validDecor, decorBlock) < decorBlock.getMaxUsages()) {
+                    validDecor.add(decorBlock);
+                }
+            }
+        }
+        return validDecor;
+    }
+
+    public void saveDecorData(Level level, BlockPos pos, BlockState state) {
+        List<DecorBlock> decor = getDecorInArea(level, pos, state);
+        HashMap<String, Integer> themeStats = new HashMap<>();
+        CafeModifiers newModifiers = new CafeModifiers();
+        for (DecorBlock decorBlock : decor) {
+            for (CafeModifier cafeModifier : decorBlock.getCafeModifiers()) {
+                if (Collections.frequency(newModifiers, cafeModifier) < cafeModifier.getMaxModifierCount()) {
+                    newModifiers.add(cafeModifier);
+                }
+                if (!decorBlock.getDecorThemes().isEmpty()) {
+                    for (String theme : decorBlock.getDecorThemes()) {
+                        if (CafeThemeRegistry.INSTANCE.getForID(theme) != null) {
+                            themeStats.merge(theme, 1, Integer::sum);
+                        }
+                    }
+                }
+            }
+        }
+        this.activeTheme = themeStats.entrySet().stream()
+                .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
+                .map(entry -> CafeThemeRegistry.INSTANCE.getForID(entry.getKey()))
+                .filter(cafeTheme -> cafeTheme != null && themeStats.get(cafeTheme.themeId()) >= cafeTheme.minDecorItems())
+                .findFirst()
+                .orElse(null);
+        this.cafeModifiers = newModifiers;
+        CozyCafe.LOGGER.info("Saved cafe modifier data.");
+    }
+
 
     public void assignCustomersInArea(Level level, BlockPos pos, BlockState state) {
         if (!(level instanceof ServerLevel serverLevel)) return;
@@ -262,6 +309,14 @@ public class CafeManagerBlockEntity extends BlockEntity implements MenuProvider 
         return this.dayLastOpened;
     }
 
+    public CafeModifiers getCafeModifiers() {
+        return cafeModifiers;
+    }
+
+    public CafeTheme getActiveTheme() {
+        return activeTheme;
+    }
+
     public void toggleOpenFromMenu(ServerPlayer player) {
         if (!this.open && !this.canBeOpened(player)) return;
         this.toggleOpen();
@@ -327,6 +382,7 @@ public class CafeManagerBlockEntity extends BlockEntity implements MenuProvider 
             this.attemptedCustomers = 0;
         } else {
             this.dayLastOpened = GeneralUtils.getDay(this.level);
+            saveDecorData(this.level, this.getBlockPos(), this.getBlockState());
         }
         cafeSignBlockEntity.setOpen(open);
 
@@ -340,7 +396,9 @@ public class CafeManagerBlockEntity extends BlockEntity implements MenuProvider 
         return reputation;
     }
 
-    public boolean isShowingArea() { return showingArea; }
+    public boolean isShowingArea() {
+        return showingArea;
+    }
 
     public void setReputation(int reputation) {
         this.reputation = reputation;
@@ -411,9 +469,9 @@ public class CafeManagerBlockEntity extends BlockEntity implements MenuProvider 
 
     public void sortMenuByCategory() {
         this.menu.sort(comparingInt(item -> {
-            CafeMenuItem cafeMenuItem= CafeMenuItemRegistry.INSTANCE.getForItem(item.getItem());
+            CafeMenuItem cafeMenuItem = CafeMenuItemRegistry.INSTANCE.getForItem(item.getItem());
             if (cafeMenuItem == null) return -1;
-            CafeMenuItem.MenuItemCategory category = cafeMenuItem .category();
+            CafeMenuItem.MenuItemCategory category = cafeMenuItem.category();
             return switch (category) {
                 case DRINK -> 0;
                 case MAIN -> 1;
@@ -533,15 +591,18 @@ public class CafeManagerBlockEntity extends BlockEntity implements MenuProvider 
     @Override
     public void onLoad() {
         super.onLoad();
-        if (this.level.isClientSide() && this.showingArea) {
+        if (this.level.isClientSide && this.showingArea) {
             CafeAreaRenderer.addBox(this.worldPosition, this.getAreaBox());
+        }
+        if (!this.level.isClientSide) {
+            saveDecorData(this.level, this.getBlockPos(), this.getBlockState());
         }
     }
 
     @Override
     public void setRemoved() {
         super.setRemoved();
-        if (this.level.isClientSide() && this.showingArea) {
+        if (this.level.isClientSide && this.showingArea) {
             CafeAreaRenderer.removeBox(this.worldPosition);
         }
     }

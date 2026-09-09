@@ -7,6 +7,17 @@ import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 
 public record ModifierAction(double value, NumberAction action) {
+    public String getTextRepresentation() {
+        return (this.action() == NumberAction.ADD ? "+" : "x") + this.value();
+    }
+
+    public static ModifierAction emptyModifierAction() {
+        return new ModifierAction(0, NumberAction.ADD);
+    }
+
+    public boolean isEmpty() {
+        return this.value == 0 && this.action == NumberAction.ADD;
+    }
 
     public static final Codec<ModifierAction> CODEC = RecordCodecBuilder.create(instance ->
             instance.group(

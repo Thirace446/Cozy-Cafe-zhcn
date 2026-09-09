@@ -1,0 +1,108 @@
+{
+  "values": {
+    "minecraft:cake": {
+      "decor_themes": [
+        "bakery",
+        "diner"
+      ],
+      "modifiers": [
+        {
+          "modifier_id": "sweet_tooth",
+          "modifier_name": {
+            "translate": "modifier.cozycafe.sweet_tooth"
+          },
+          "modifier_icon": "minecraft:cake",
+          "type": "decor",
+          "flavors_impacted": [
+            "sweet",
+            "bread"
+          ],
+          "max_modifier_count": 3,
+          "modifier_actions": {
+            "price": {
+              "value": 1.2,
+              "action": "multiply"
+            },
+            "patience": {
+              "value": 0.8,
+              "action": "multiply"
+            }
+          }
+        }
+      ]
+    },
+    "#minecraft:candles": {
+      "decor_themes": [
+        "fancy",
+        "bar"
+      ],
+      "modifiers": [
+        {
+          "modifier_id": "romantic",
+          "modifier_name": {
+            "translate": "modifier.cozycafe.romantic"
+          },
+          "modifier_icon": "minecraft:red_candle",
+          "type": "decor",
+          "max_modifier_count": 5,
+          "modifier_actions": {
+            "tip": {
+              "value": 1.05,
+              "action": "multiply"
+            },
+            "patience": {
+              "value": 1.05,
+              "action": "multiply"
+            }
+          }
+        }
+      ]
+    },
+    "#minecraft:flower_pots": {
+      "modifiers": [
+        {
+          "modifier_id": "blooming",
+          "modifier_icon": "minecraft:sunflower",
+          "modifier_name": {
+            "translate": "modifier.cozycafe.blooming"
+          },
+          "type": "decor",
+          "max_modifier_count": 4,
+          "modifier_actions": {
+            "customer_impact": {
+              "value": 1.05,
+              "action": "multiply"
+            },
+            "patience": {
+              "value": 1.05,
+              "action": "multiply"
+            }
+          }
+        }
+      ]
+    },
+    "#minecraft:flowers": {
+      "modifiers": [
+        {
+          "modifier_id": "blooming",
+          "modifier_icon": "minecraft:sunflower",
+          "modifier_name": {
+            "translate": "modifier.cozycafe.blooming"
+          },
+          "type": "decor",
+          "max_modifier_count": 4,
+          "modifier_actions": {
+            "customer_impact": {
+              "value": 1.05,
+              "action": "multiply"
+            },
+            "patience": {
+              "value": 1.05,
+              "action": "multiply"
+            }
+          }
+        }
+      ]
+    }
+  }
+}

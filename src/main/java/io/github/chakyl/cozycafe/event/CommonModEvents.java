@@ -11,6 +11,9 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
 import net.neoforged.neoforge.event.entity.EntityAttributeCreationEvent;
+import net.neoforged.neoforge.registries.datamaps.RegisterDataMapTypesEvent;
+
+import static io.github.chakyl.cozycafe.DataMapRegistry.DECOR;
 
 @EventBusSubscriber(modid = CozyCafe.MODID)
 public class CommonModEvents {
@@ -32,5 +35,10 @@ public class CommonModEvents {
     @SubscribeEvent
     public static void onRegisterCommands(RegisterCommandsEvent event) {
         ModifyCustomerSkinCommand.register(event.getDispatcher());
+    }
+
+    @SubscribeEvent
+    public static void registerDataMapTypes(RegisterDataMapTypesEvent event) {
+        event.register(DECOR);
     }
 }

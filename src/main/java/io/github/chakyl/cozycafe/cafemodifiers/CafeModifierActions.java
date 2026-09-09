@@ -5,6 +5,8 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 
 import java.util.Optional;
 
+import static io.github.chakyl.cozycafe.cafemodifiers.ModifierAction.emptyModifierAction;
+
 public class CafeModifierActions {
     private ModifierAction tip;
     private ModifierAction price;
@@ -52,10 +54,10 @@ public class CafeModifierActions {
     }
 
     public static final Codec<CafeModifierActions> CODEC = RecordCodecBuilder.create(inst -> inst.group(
-            ModifierAction.CODEC.optionalFieldOf("tip").xmap(opt -> opt.orElse(null), Optional::ofNullable).forGetter(CafeModifierActions::getTip),
-            ModifierAction.CODEC.optionalFieldOf("price").xmap(opt -> opt.orElse(null), Optional::ofNullable).forGetter(CafeModifierActions::getPrice),
-            ModifierAction.CODEC.optionalFieldOf("customer_impact").xmap(opt -> opt.orElse(null), Optional::ofNullable).forGetter(CafeModifierActions::getCustomerImpact),
-            ModifierAction.CODEC.optionalFieldOf("patience").xmap(opt -> opt.orElse(null), Optional::ofNullable).forGetter(CafeModifierActions::getPatience)
+            ModifierAction.CODEC.optionalFieldOf("tip", emptyModifierAction()).forGetter(CafeModifierActions::getTip),
+            ModifierAction.CODEC.optionalFieldOf("price", emptyModifierAction()).forGetter(CafeModifierActions::getPrice),
+            ModifierAction.CODEC.optionalFieldOf("customer_impact", emptyModifierAction()).forGetter(CafeModifierActions::getCustomerImpact),
+            ModifierAction.CODEC.optionalFieldOf("patience", emptyModifierAction()).forGetter(CafeModifierActions::getPatience)
     ).apply(inst, CafeModifierActions::new));
 
 

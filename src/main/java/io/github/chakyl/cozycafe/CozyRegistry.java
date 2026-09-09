@@ -11,6 +11,8 @@ import io.github.chakyl.cozycafe.blocks.CafeSignBlock;
 import io.github.chakyl.cozycafe.blocks.PlatingStationBlock;
 import io.github.chakyl.cozycafe.entities.CustomerEntity;
 import io.github.chakyl.cozycafe.gui.CafeManagerMenu;
+import io.github.chakyl.cozycafe.gui.CafeStatsMenu;
+import io.github.chakyl.cozycafe.gui.CafeStatsScreen;
 import io.github.chakyl.cozycafe.gui.MenuSelectorMenu;
 import io.github.chakyl.cozycafe.item.CafeSignItem;
 import io.github.chakyl.cozycafe.item.DirtyServingPlateItem;
@@ -163,6 +165,7 @@ public final class CozyRegistry {
 
         public static final DeferredHolder<MenuType<?>, MenuType<CafeManagerMenu>> CAFE_MANAGER = MENU_TYPES.register("cafe_manager", () -> IMenuTypeExtension.create(CafeManagerMenu::new));
         public static final DeferredHolder<MenuType<?>, MenuType<MenuSelectorMenu>>  MENU_SELECTOR = MENU_TYPES.register("menu_selector", () -> IMenuTypeExtension.create(MenuSelectorMenu::new));
+        public static final DeferredHolder<MenuType<?>, MenuType<CafeStatsMenu>>  CAFE_STATS = MENU_TYPES.register("cafe_stats", () -> IMenuTypeExtension.create(CafeStatsMenu::new));
     }
 
     public static final class DataComponentsRegistry {

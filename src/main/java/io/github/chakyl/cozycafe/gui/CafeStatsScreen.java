@@ -2,21 +2,17 @@ package io.github.chakyl.cozycafe.gui;
 
 
 import com.mojang.blaze3d.systems.RenderSystem;
-import io.github.chakyl.cozycafe.CozyCafe;
+import io.github.chakyl.cozycafe.cafemodifiers.CafeModifier;
+import io.github.chakyl.cozycafe.cafemodifiers.CafeModifierActions;
+import io.github.chakyl.cozycafe.cafemodifiers.CafeModifiers;
 import io.github.chakyl.cozycafe.data.CafeMenuItem;
 import io.github.chakyl.cozycafe.data.CafeMenuItemRegistry;
-import io.github.chakyl.cozycafe.network.EvilPacketsIHateThem;
-import io.github.chakyl.cozycafe.network.ServerBoundRemoveMenuItemPacket;
-import io.github.chakyl.cozycafe.util.MenuItemSelectionState;
-import net.minecraft.ChatFormatting;
-import net.minecraft.client.Minecraft;
+import io.github.chakyl.cozycafe.data.CafeTheme;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.ImageButton;
-import net.minecraft.client.gui.components.WidgetSprites;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.FormattedText;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
@@ -25,49 +21,44 @@ import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static io.github.chakyl.cozycafe.CozyCafe.loc;
-import static io.github.chakyl.cozycafe.util.GeneralUtils.formatPrice;
 import static io.github.chakyl.cozycafe.util.GeneralUtils.getMenuItemTooltip;
+import static io.github.chakyl.cozycafe.util.ModifierUtils.*;
 
 @OnlyIn(Dist.CLIENT)
 public class CafeStatsScreen extends AbstractContainerScreen<CafeStatsMenu> {
 
-    private static final ResourceLocation GUI_LOCATION = loc("textures/gui/cafe_statspng");
+    private static final ResourceLocation GUI_LOCATION = loc("textures/gui/cafe_stats.png");
     private static final int TEXTURE_WIDTH = 256;
     private static final int TEXTURE_HEIGHT = 256;
     private static final int SELL_ITEM_1_X = 5;
     private static final int SELL_ITEM_2_X = 35;
     private static final int BUY_ITEM_X = 68;
     private static final int LABEL_Y = 6;
-    private static final int NUMBER_OF_MENU_BUTTONS = 4;
-    private static final int TRADE_BUTTON_WIDTH = 138;
-    private static final int MENU_BUTTON_HEIGHT = 15;
+    private static final int NUMBER_OF_MODIFIERS = 5;
+    private static final int MODIFIER_HEIGHT = 17;
+    private static final int MODIFIER_WIDTH = 120;
     private static final int MENU_BUTTON_WIDTH = 87;
-    private static final int SCROLLER_HEIGHT = 27;
+    private static final int SCROLLER_HEIGHT = 22;
     private static final int SCROLLER_WIDTH = 6;
-    private static final int SCROLL_BAR_HEIGHT = MENU_BUTTON_HEIGHT * NUMBER_OF_MENU_BUTTONS;
-    private static final int SCROLL_BAR_TOP_POS_Y = 22;
+    private static final int SCROLL_BAR_HEIGHT = MODIFIER_HEIGHT * NUMBER_OF_MODIFIERS;
+    private static final int SCROLL_BAR_TOP_POS_Y = 122;
     private static final int SCROLL_BAR_START_X = 155;
     private static final int LIMIT_ICON_START_X = 320;
     private static final int LIMIT_ICON_SIZE = 9;
     int scrollOff;
-    private MenuItemSelectionState lastStatus = MenuItemSelectionState.UNSET;
     private boolean isDragging;
-    private List<ItemStack> cafeMenu = new ArrayList<>();
-    private final CafeMenuItemButton[] cafeMenuItemButtons = new CafeMenuItemButton[NUMBER_OF_MENU_BUTTONS];
-    private static final WidgetSprites DELEETE_BUTTON_SPRITES = new WidgetSprites(GUI_LOCATION, GUI_LOCATION);
+    private CafeModifiers cafeModifiers;
+    private HashMap<String, Integer> modifierCounts;
 
     public CafeStatsScreen(CafeStatsMenu pMenu, Inventory pPlayerInventory, Component pTitle) {
         super(pMenu, pPlayerInventory, pTitle);
         this.imageWidth = 176;
         this.imageHeight = 225;
-    }
-
-    private void postButtonClick(int index) {
-        this.menu.removeFromClientMenu(index);
-        EvilPacketsIHateThem.sendToServer(new ServerBoundRemoveMenuItemPacket(index));
     }
 
     @Override
@@ -76,22 +67,32 @@ public class CafeStatsScreen extends AbstractContainerScreen<CafeStatsMenu> {
         int leftPos = this.getGuiLeft();
         int topPos = this.getGuiTop();
         int offset = topPos + 22;
-
-        cafeMenu = this.menu.getCafeMenu();
-        for (int l = 0; l < NUMBER_OF_MENU_BUTTONS; ++l) {
-            final int slotIndex = l;
-            this.cafeMenuItemButtons[l] = this.addRenderableWidget(new CafeMenuItemButton(leftPos + 140, offset, l, 15, 15, DELEETE_BUTTON_SPRITES, (button) -> {
-                int itemIndex = this.menu.getCafeMenu().size() > 4 ? this.scrollOff + slotIndex : slotIndex;
-                if (itemIndex < this.menu.getCafeMenu().size()) {
-                    this.postButtonClick(itemIndex);
-                }
-            }));
-            offset += MENU_BUTTON_HEIGHT;
-        }
+        cafeModifiers = this.menu.getCafeModifiers();
+        modifierCounts = getModifierCounts(this.menu.getCafeModifiers(), this.menu.getCafeTheme());
     }
 
     @Override
     protected void renderLabels(GuiGraphics pGuiGraphics, int pMouseX, int pMouseY) {
+    }
+
+    private void renderModifierActions(GuiGraphics gfx, int startX, int startY, CafeModifierActions cafeModifierActions) {
+        int actionOffset = startY;
+        int offsetAmount = 11;
+        if (!cafeModifierActions.getTip().isEmpty()) {
+            gfx.drawString(this.font, Component.translatable("gui.cozycafe.modifier.tip", cafeModifierActions.getTip().getTextRepresentation()), startX, actionOffset, 0xFFFFFF, true);
+            actionOffset += offsetAmount;
+        }
+        if (!cafeModifierActions.getPrice().isEmpty()) {
+            gfx.drawString(this.font, Component.translatable("gui.cozycafe.modifier.price", cafeModifierActions.getPrice().getTextRepresentation()), startX, actionOffset, 0xFFFFFF, true);
+            actionOffset += offsetAmount;
+        }
+        if (!cafeModifierActions.getCustomerImpact().isEmpty()) {
+            gfx.drawString(this.font, Component.translatable("gui.cozycafe.modifier.customer_impact", cafeModifierActions.getCustomerImpact().getTextRepresentation()), startX, actionOffset, 0xFFFFFF, true);
+            actionOffset += offsetAmount;
+        }
+        if (!cafeModifierActions.getPatience().isEmpty()) {
+            gfx.drawString(this.font, Component.translatable("gui.cozycafe.modifier.patience", cafeModifierActions.getPatience().getTextRepresentation()), startX, actionOffset, 0xFFFFFF, true);
+        }
     }
 
     @Override
@@ -99,86 +100,67 @@ public class CafeStatsScreen extends AbstractContainerScreen<CafeStatsMenu> {
         int left = this.getGuiLeft();
         int top = this.getGuiTop();
         gfx.blit(GUI_LOCATION, left, top, 0, 0.0F, 0.0F, this.imageWidth, this.imageHeight, TEXTURE_WIDTH, TEXTURE_HEIGHT);
+        CafeTheme theme = this.menu.getCafeTheme();
+        gfx.drawString(this.font, Component.translatable("gui.cozy_cafe.theme"), left + 20, top + 22, 0xFFFFFF, true);
+        if (theme != null) {
+            gfx.renderFakeItem(theme.modifier().getModifierIcon().getDefaultInstance(), left + 22, top + 36);
+            gfx.drawString(this.font, theme.themeName(), left + 42, top + 40, 0xFFFFFF, true);
+            renderModifierActions(gfx, left + 28, top + 58, theme.modifier().getModifierActions());
+            gfx.blit(GUI_LOCATION, left + 140, top + 36, 176, 32, 16, 16);
+            if (pMouseX >= left + 20 && pMouseX < left + MODIFIER_WIDTH + 40 && pMouseY >= top + 34 && pMouseY < top + 54) {
+                final List<Component> tooltipList = getModifierFlavorsTooltips(theme.modifier());
+                gfx.renderTooltip(this.font, tooltipList, Items.AIR.getDefaultInstance().getTooltipImage(), pMouseX, pMouseY);
+            }
+        } else {
 
-        gfx.drawString(this.font, Component.translatable("gui.cozycafe.menu_selector.name"), left + 16, top + 12, 0xFFFFFF, true);
-        gfx.drawString(this.font, Component.literal((this.menu.blockEntity.getMenu() == null ? "0" : this.menu.blockEntity.getMenu().size()) + "/25"), left + 132, top + 12, 0xFFFFFF, true);
-        gfx.drawString(this.font, Component.literal(String.valueOf(this.menu.blockEntity.getStarsFromReputation())), left + 21, top + 95, 0xFFFFFF, true);
-        gfx.drawString(this.font, Component.translatable("gui.cozycafe.menu_selector.stars_required", Math.max(3, this.menu.blockEntity.getStarsFromReputation() * CozyCafe.CONFIG.menuSizePerStar.get())), left + 44, top + 95, 0xFFFFFF, true);
-
-        MenuItemSelectionState currentStatus = MenuItemSelectionState.fromCode(this.menu.getMenuItemAdditionStatus());
-        if (this.cafeMenu != null && !this.cafeMenu.isEmpty()) {
-            int k = top + 14;
-            int l = left + 14 + NUMBER_OF_MENU_BUTTONS;
+            gfx.drawString(this.font, Component.translatable("gui.cozy_cafe.no_theme"), left + 22, top + 40, 0xFFFFFF, true);
+            gfx.drawWordWrap(this.font, FormattedText.of(Component.translatable("gui.cozy_cafe.adding_theme").getString()), left + 33, top + 65, 120, 0x000000);
+            gfx.drawWordWrap(this.font, FormattedText.of(Component.translatable("gui.cozy_cafe.adding_theme").getString()), left + 32, top + 64, 120, 0xFFFFFF);
+        }
+        gfx.drawString(this.font, Component.translatable("gui.cozy_cafe.active_modifiers"), left + 20, top + 109, 0xFFFFFF, true);
+        if (this.cafeModifiers != null && !this.cafeModifiers.isEmpty()) {
+            int k = top + 105;
+            int l = left + 14 + NUMBER_OF_MODIFIERS;
             this.renderScroller(gfx);
             int i1 = 0;
-            for (ItemStack menuItem : this.cafeMenu) {
-                int j1 = k + 8;
-                if (!this.canScroll(this.cafeMenu.size()) || i1 >= this.scrollOff && i1 < NUMBER_OF_MENU_BUTTONS + this.scrollOff) {
-                    gfx.renderFakeItem(menuItem, l, j1);
-                    CafeMenuItem cafeMenuItem = CafeMenuItemRegistry.INSTANCE.getForItem(menuItem.getItem());
-                    gfx.drawString(this.font, Component.translatable("category.cozycafe." + cafeMenuItem.category().toString().toLowerCase()), l + 20, j1 + 4, 16777215, true);
-                    Component priceStr = Component.translatable("gui.cozycafe.menu_selector.inline_price", formatPrice(cafeMenuItem.price()));
-                    int priceOffset = 16;
-                    gfx.drawString(this.font, priceStr, l + TRADE_BUTTON_WIDTH - font.width(priceStr) - priceOffset, j1 + 4, 16777215, true);
+            List<String> renderedIds = new ArrayList<>();
+            for (CafeModifier modifier : cafeModifiers) {
+                if (renderedIds.contains(modifier.getModifierId())) continue;
+                int j1 = k + 17;
+                if (!this.canScroll(this.cafeModifiers.size()) || i1 >= this.scrollOff && i1 < NUMBER_OF_MODIFIERS + this.scrollOff) {
+                    gfx.renderFakeItem(modifier.getModifierIcon().getDefaultInstance(), l, j1);
+                    gfx.drawString(this.font, modifier.getModifierName(), l + (modifier.getModifierIcon() == Items.AIR ? 0 : 20), j1 + 4, 0xFFFFFF, true);
+                    gfx.drawString(this.font, modifierCounts.get(modifier.getModifierId()) + "/" + modifier.getMaxModifierCount(), l + 99, j1 + 4, 0xFFFFFF, true);
 
-                    if (pMouseX >= l && pMouseX < l + TRADE_BUTTON_WIDTH - priceOffset && pMouseY >= j1 && pMouseY < j1 + MENU_BUTTON_HEIGHT) {
-                        final List<Component> tooltipList = getMenuItemTooltip(cafeMenuItem.item().getDefaultInstance(), cafeMenuItem);
-                        gfx.renderTooltip(this.font, tooltipList, cafeMenuItem.item().getDefaultInstance().getTooltipImage(), pMouseX, pMouseY);
+                    if (pMouseX >= l && pMouseX < l + MODIFIER_WIDTH && pMouseY >= j1 && pMouseY < j1 + MODIFIER_HEIGHT) {
+                        final List<Component> tooltipList = getModifierTooltips(modifier, false);
+                        gfx.renderTooltip(this.font, tooltipList, Items.AIR.getDefaultInstance().getTooltipImage(), pMouseX, pMouseY);
                     }
 
-
-                    k += MENU_BUTTON_HEIGHT;
+                    gfx.blit(GUI_LOCATION, l + 120, j1, 176, 32, 16, 16);
+                    if (pMouseX >= l +MODIFIER_WIDTH && pMouseX < l + MODIFIER_WIDTH + 16 && pMouseY >= j1 && pMouseY < j1 + MODIFIER_HEIGHT) {
+                        final List<Component> tooltipList = getModifierFlavorsTooltips(modifier);
+                        gfx.renderTooltip(this.font, tooltipList, Items.AIR.getDefaultInstance().getTooltipImage(), pMouseX, pMouseY);
+                    }
+                    k += MODIFIER_HEIGHT;
                     ++i1;
                 } else {
                     ++i1;
                 }
-
+                renderedIds.add(modifier.getModifierId());
             }
         }
 
-        for (CafeMenuItemButton MenuSelectorScreen$cafeMenuItemButton : this.cafeMenuItemButtons) {
-            if (MenuSelectorScreen$cafeMenuItemButton.isHoveredOrFocused()) {
-                MenuSelectorScreen$cafeMenuItemButton.renderToolTip(gfx, pMouseX, pMouseY);
-            }
-            MenuSelectorScreen$cafeMenuItemButton.visible = MenuSelectorScreen$cafeMenuItemButton.index < this.cafeMenu.size();
-        }
         RenderSystem.enableDepthTest();
-        // Menu addition status
-        int feedbackIconX = left + 44;
-        int feedbackIconY = top + 117;
-        if (currentStatus == MenuItemSelectionState.VALID) {
-            gfx.blit(GUI_LOCATION, feedbackIconX - 4, feedbackIconY - 4, 192, 32, 16, 16);
-            gfx.drawString(this.font, Component.translatable("gui.cozycafe.menu_selector.added"), feedbackIconX + 12, feedbackIconY, 0xFFFFFF, true);
-        } else if (currentStatus == MenuItemSelectionState.INVALID) {
-            gfx.blit(GUI_LOCATION, feedbackIconX - 4, feedbackIconY - 4, 176, 32, 16, 16);
-            gfx.drawString(this.font, Component.translatable("gui.cozycafe.menu_selector.invalid"), feedbackIconX + 12, feedbackIconY, 0xFFFFFF, true);
-        } else {
-            gfx.drawString(this.font, Component.translatable("gui.cozycafe.menu_selector.place_items"), feedbackIconX, feedbackIconY, 0xFFFFFF, true);
-        }
 
 
     }
 
     @Override
     public void render(GuiGraphics pGuiGraphics, int pMouseX, int pMouseY, float pPartialTick) {
-        this.renderBackground(pGuiGraphics, pMouseX,pMouseY, pPartialTick);
+        this.renderBackground(pGuiGraphics, pMouseX, pMouseY, pPartialTick);
         super.render(pGuiGraphics, pMouseX, pMouseY, pPartialTick);
         this.renderTooltip(pGuiGraphics, pMouseX, pMouseY);
-    }
-
-    @Override
-    protected void containerTick() {
-        super.containerTick();
-        MenuItemSelectionState currentStatus = MenuItemSelectionState.fromCode(this.menu.getMenuItemAdditionStatus());
-        if (currentStatus != lastStatus) {
-            if (currentStatus == MenuItemSelectionState.VALID) {
-                Minecraft.getInstance().player.playSound(SoundEvents.NOTE_BLOCK_CHIME.value(), 1.0F, 1.0F);
-                this.cafeMenu = this.menu.getCafeMenu();
-            } else if (currentStatus == MenuItemSelectionState.INVALID) {
-                Minecraft.getInstance().player.playSound(SoundEvents.NOTE_BLOCK_BASS.value(), 1.0F, 1.0F);
-            }
-            this.lastStatus = currentStatus;
-        }
     }
 
     @Override
@@ -198,11 +180,10 @@ public class CafeStatsScreen extends AbstractContainerScreen<CafeStatsMenu> {
     }
 
 
-
     public boolean mouseScrolled(double pMouseX, double pMouseY, double pDelta) {
-        int i = this.cafeMenu.size();
+        int i = this.cafeModifiers.size();
         if (this.canScroll(i)) {
-            int j = i - NUMBER_OF_MENU_BUTTONS;
+            int j = i - NUMBER_OF_MODIFIERS;
             this.scrollOff = Mth.clamp((int) ((double) this.scrollOff - pDelta), 0, j);
         }
 
@@ -210,11 +191,11 @@ public class CafeStatsScreen extends AbstractContainerScreen<CafeStatsMenu> {
     }
 
     public boolean mouseDragged(double pMouseX, double pMouseY, int pButton, double pDragX, double pDragY) {
-        int i = this.cafeMenu.size();
+        int i = this.cafeModifiers.size();
         if (this.isDragging) {
             int j = this.topPos + SCROLL_BAR_TOP_POS_Y;
             int k = j + SCROLL_BAR_HEIGHT;
-            int l = i - NUMBER_OF_MENU_BUTTONS;
+            int l = i - NUMBER_OF_MODIFIERS;
             float f = ((float) pMouseY - (float) j - 13.5F) / ((float) (k - j) - 27.0F);
             f = f * (float) l + 0.5F;
             this.scrollOff = Mth.clamp((int) f, 0, l);
@@ -228,7 +209,7 @@ public class CafeStatsScreen extends AbstractContainerScreen<CafeStatsMenu> {
         this.isDragging = false;
         int i = (this.width - this.imageWidth) / 2;
         int j = (this.height - this.imageHeight) / 2;
-        if (this.canScroll(this.cafeMenu.size()) && pMouseX > (double) (i + SCROLL_BAR_START_X) && pMouseX < (double) (i + SCROLL_BAR_START_X + 6) && pMouseY > (double) (j + SCROLL_BAR_TOP_POS_Y) && pMouseY <= (double) (j + SCROLL_BAR_TOP_POS_Y + SCROLL_BAR_HEIGHT + 1)) {
+        if (this.canScroll(this.cafeModifiers.size()) && pMouseX > (double) (i + SCROLL_BAR_START_X) && pMouseX < (double) (i + SCROLL_BAR_START_X + 6) && pMouseY > (double) (j + SCROLL_BAR_TOP_POS_Y) && pMouseY <= (double) (j + SCROLL_BAR_TOP_POS_Y + SCROLL_BAR_HEIGHT + 1)) {
             this.isDragging = true;
         }
         return super.mouseClicked(pMouseX, pMouseY, pButton);
@@ -237,7 +218,7 @@ public class CafeStatsScreen extends AbstractContainerScreen<CafeStatsMenu> {
     private void renderScroller(GuiGraphics pGuiGraphics) {
         int pPosX = this.getGuiLeft();
         int pPosY = this.getGuiTop();
-        int i = this.cafeMenu.size() + 1 - NUMBER_OF_MENU_BUTTONS;
+        int i = this.cafeModifiers.size() + 1 - NUMBER_OF_MODIFIERS;
         if (i > 1) {
             int j = SCROLL_BAR_HEIGHT - (SCROLLER_HEIGHT + (i - 1) * SCROLL_BAR_HEIGHT / i);
             int k = j / i + SCROLL_BAR_HEIGHT / i;
@@ -254,50 +235,8 @@ public class CafeStatsScreen extends AbstractContainerScreen<CafeStatsMenu> {
     }
 
     private boolean canScroll(int pNumOffers) {
-        return pNumOffers > NUMBER_OF_MENU_BUTTONS;
+        return pNumOffers > NUMBER_OF_MODIFIERS;
     }
 
-
-    @OnlyIn(Dist.CLIENT)
-    class CafeMenuItemButton extends ImageButton {
-        final int index;
-
-        public CafeMenuItemButton(int pX, int pY, int pIndex, int pWidth, int pHeight, WidgetSprites pWidgetSprites, OnPress pOnPress) {
-            super(pX, pY, pWidth, pHeight, pWidgetSprites, pOnPress);
-            this.index = pIndex;
-            this.visible = false;
-        }
-
-        public int getIndex() {
-            return this.index;
-        }
-
-        @Override
-        public void renderWidget(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-            int u = 176;
-            int v = 32;
-
-            if (!this.active) {
-                v += 16;
-
-            } else if (this.isHoveredOrFocused()) {
-                v += 16;
-            }
-
-            guiGraphics.blit(GUI_LOCATION, this.getX(), this.getY(), u, v, this.width, this.height, TEXTURE_WIDTH, TEXTURE_HEIGHT);
-        }
-        public void renderToolTip(GuiGraphics pGuiGraphics, int pMouseX, int pMouseY) {
-            if (this.isHovered && CafeStatsScreen.this.cafeMenu.size() > this.index + CafeStatsScreen.this.scrollOff) {
-                List<Component> tooltipList = new ArrayList<>(3);
-                CafeMenuItem cafeMenuItem = CafeMenuItemRegistry.INSTANCE.getForItem(CafeStatsScreen.this.cafeMenu.get(this.index + CafeStatsScreen.this.scrollOff).getItem());
-                tooltipList.add(cafeMenuItem.item().getDefaultInstance().getHoverName());
-                tooltipList.add(Component.translatable("gui.cozycafe.menu_selector.remove").withStyle(ChatFormatting.RED));
-
-                pGuiGraphics.renderTooltip(CafeStatsScreen.this.font, tooltipList, Items.ACACIA_FENCE.getDefaultInstance().getTooltipImage(), pMouseX, pMouseY);
-
-            }
-
-        }
-    }
 
 }

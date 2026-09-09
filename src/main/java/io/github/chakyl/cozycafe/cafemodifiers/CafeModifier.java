@@ -4,23 +4,29 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.chakyl.cozycafe.data.CafeMenuItem;
 import io.github.chakyl.cozycafe.data.CafeTheme;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.ComponentSerialization;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 
 import java.util.List;
 
 public class CafeModifier {
     private String modifierId;
     private Component modifierName;
+    private Item modifierIcon;
     private ModifierType type;
     private List<String> decorThemes;
     private List<String> flavorsImpacted;
     private int maxModifierCount;
     private CafeModifierActions modifierActions;
 
-    public CafeModifier(String modifierId, Component modifierName, ModifierType type, List<String> decorThemes, List<String> flavorsImpacted, int maxModifierCount, CafeModifierActions modifierActions) {
+    public CafeModifier(String modifierId, Component modifierName, Item modifierIcon, ModifierType type, List<String> decorThemes, List<String> flavorsImpacted, int maxModifierCount, CafeModifierActions modifierActions) {
         this.modifierId = modifierId;
         this.modifierName = modifierName;
+        this.modifierIcon = modifierIcon;
         this.type = type;
         this.decorThemes = decorThemes;
         this.flavorsImpacted = flavorsImpacted;
@@ -85,9 +91,18 @@ public class CafeModifier {
         return type == ModifierType.DECOR ? flavorsImpacted : List.of();
     }
 
+    public Item getModifierIcon() {
+        return modifierIcon;
+    }
+
+    public void setModifierIcon(Item modifierIcon) {
+        this.modifierIcon = modifierIcon;
+    }
+
     public static final Codec<CafeModifier> CODEC = RecordCodecBuilder.create(inst -> inst.group(
             Codec.STRING.fieldOf("modifier_id").forGetter(CafeModifier::getModifierId),
             ComponentSerialization.CODEC.optionalFieldOf("modifier_name", Component.empty()).forGetter(CafeModifier::getModifierName),
+            BuiltInRegistries.ITEM.byNameCodec().optionalFieldOf("modifier_icon", Items.AIR).forGetter(CafeModifier::getModifierIcon),
             Codec.STRING.optionalFieldOf("type", "default").xmap(
                     s -> switch (s.toLowerCase()) {
                         case "decor" -> ModifierType.THEME;

@@ -77,6 +77,10 @@
   "flavor.cozycafe.chocolate": "Chocolate",
   "flavor.cozycafe.alcoholic": "Alcoholic",
 
+  "modifier.cozycafe.sweet_tooth": "Sweet Tooth",
+  "modifier.cozycafe.romantic": "Romantic",
+  "modifier.cozycafe.blooming": "Blooming",
+
   "gui.cozycafe.cafe_manager.edit_menu": "Edit cafe menu",
   "gui.cozycafe.cafe_manager.open": "Open cafe",
   "gui.cozycafe.cafe_manager.close": "Close cafe",
@@ -84,6 +88,11 @@
   "gui.cozycafe.cafe_manager.hide_area": "Hide cafe area",
   "gui.cozycafe.cafe_manager.clear_data": "Clear cafe data (Hold Shift)",
   "gui.cozycafe.cafe_manager.edit_name": "Edit cafe name",
+  "gui.cozycafe.cafe_manager.view_stats": "View cafe stats",
+  "gui.cozycafe.modifier.tip": "Tip: %s",
+  "gui.cozycafe.modifier.price": "Price: %s",
+  "gui.cozycafe.modifier.customer_impact": "Customers: %s",
+  "gui.cozycafe.modifier.patience": "Patience: %s",
 
   "gui.cozycafe.menu_selector.name": "Menu",
   "gui.cozycafe.menu_selector.invalid": "Can't add!",
@@ -98,6 +107,15 @@
   "gui.cozycafe.menu_selector.bottle_drink": "Drops bottle when consumed",
   "gui.cozycafe.menu_selector.stars_required": "Minimum menu size: %s",
   "gui.cozycafe.menu_selector.place_items": "Place item to add",
+  "gui.cozy_cafe.adding_theme": "Place more themed decor in your cafe to set!",
+  "gui.cozy_cafe.no_theme": "No theme yet!",
+  "gui.cozy_cafe.theme": "Theme",
+  "gui.cozy_cafe.active_modifiers": "Active Modifiers",
+  "gui.cozycafe.modifier.affects_theme": "Valid for themes: %s",
+  "gui.cozycafe.modifier.max": "Max: %s",
+  "gui.cozycafe.modifier.affects_flavor": "Affects flavors: %s",
+  "gui.cozycafe.modifier.affects_all_flavors": "Affects all flavors!",
+
   "command.cozycafe.add_user.success": "Added player %s to customer usernames config",
   "command.cozycafe.add_user.fail": "%s is already in the config!",
   "command.cozycafe.remove_user.success": "Removed %s from customer config...",
