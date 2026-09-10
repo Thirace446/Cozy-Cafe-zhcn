@@ -5,13 +5,9 @@ import io.github.chakyl.cozycafe.CozyRegistry;
 import io.github.chakyl.cozycafe.DataMapRegistry;
 import io.github.chakyl.cozycafe.blockentities.renderer.CafeAreaRenderer;
 import io.github.chakyl.cozycafe.blocks.CafeManagerBlock;
-import io.github.chakyl.cozycafe.cafemodifiers.CafeModifier;
 import io.github.chakyl.cozycafe.cafemodifiers.CafeModifiers;
 import io.github.chakyl.cozycafe.cafemodifiers.DecorBlock;
-import io.github.chakyl.cozycafe.data.CafeMenuItem;
-import io.github.chakyl.cozycafe.data.CafeMenuItemRegistry;
-import io.github.chakyl.cozycafe.data.CafeTheme;
-import io.github.chakyl.cozycafe.data.CafeThemeRegistry;
+import io.github.chakyl.cozycafe.data.*;
 import io.github.chakyl.cozycafe.entities.CustomerEntity;
 import io.github.chakyl.cozycafe.gui.CafeManagerMenu;
 import io.github.chakyl.cozycafe.network.ClientBoundCafeCannotOpenPacket;
@@ -19,6 +15,7 @@ import io.github.chakyl.cozycafe.network.EvilPacketsIHateThem;
 import io.github.chakyl.cozycafe.util.CustomerEntityUtils;
 import io.github.chakyl.cozycafe.util.CustomerTarget;
 import io.github.chakyl.cozycafe.util.GeneralUtils;
+import io.github.chakyl.cozycafe.util.ModifierUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
@@ -64,6 +61,8 @@ public class CafeManagerBlockEntity extends BlockEntity implements MenuProvider 
     private AABB cafeAreaRender = null;
     private CafeTheme activeTheme;
     private CafeModifiers cafeModifiers;
+    private Integer maxCustomers;
+    private double spawnIntervalMult = 1.0;
 
     public CafeManagerBlockEntity(BlockPos pos, BlockState state) {
         super(CozyRegistry.BlockEntityRegistry.CAFE_MANAGER.get(), pos, state);
@@ -71,15 +70,18 @@ public class CafeManagerBlockEntity extends BlockEntity implements MenuProvider 
 
     public void tick(Level level, BlockPos pos, BlockState state) {
         if (!level.isClientSide() && this.open) {
-            if (level.getGameTime() % 20 == 0 && this.attemptedCustomers >= this.getMaxCustomers()) {
+            if (this.maxCustomers == null) {
+                this.getMaxCustomers();
+            }
+            if (level.getGameTime() % 20 == 0 && this.attemptedCustomers >= this.maxCustomers) {
                 if (EVENT_LOGGING) CozyCafe.LOGGER.info("[CAFE] Closing Cafe due to reaching max attempted customers");
                 this.setOpen(!open, false);
                 this.setChanged();
                 this.level.sendBlockUpdated(this.worldPosition, this.getBlockState(), this.getBlockState(), 3);
                 return;
             }
-
-            if ((level.getGameTime() % (20 * ((long) CozyCafe.CONFIG.customerSpawnInterval.get() * (1 - (Math.max(0, this.reputation - 1) / 5000))))) == 0) {
+            int resolvedInterval = (int) ((20 * ((long) CozyCafe.CONFIG.customerSpawnInterval.get() * (1 - ((double) Math.max(0, this.reputation - 1) / 5000)))) * spawnIntervalMult);
+            if ((level.getGameTime() %  resolvedInterval == 0)) {
                 assignCustomersInArea(level, pos, state);
             }
         }
@@ -119,14 +121,16 @@ public class CafeManagerBlockEntity extends BlockEntity implements MenuProvider 
         HashMap<String, Integer> themeStats = new HashMap<>();
         CafeModifiers newModifiers = new CafeModifiers();
         for (DecorBlock decorBlock : decor) {
-            for (CafeModifier cafeModifier : decorBlock.getCafeModifiers()) {
-                if (Collections.frequency(newModifiers, cafeModifier) < cafeModifier.getMaxModifierCount()) {
-                    newModifiers.add(cafeModifier);
-                }
-                if (!decorBlock.getDecorThemes().isEmpty()) {
-                    for (String theme : decorBlock.getDecorThemes()) {
-                        if (CafeThemeRegistry.INSTANCE.getForID(theme) != null) {
-                            themeStats.merge(theme, 1, Integer::sum);
+            if (decorBlock.getCafeModifiers() != null) {
+                for (CafeModifier cafeModifier : decorBlock.getCafeModifiers()) {
+                    if (Collections.frequency(newModifiers, cafeModifier) < cafeModifier.maxModifierCount()) {
+                        newModifiers.add(cafeModifier);
+                    }
+                    if (!decorBlock.getDecorThemes().isEmpty()) {
+                        for (String theme : decorBlock.getDecorThemes()) {
+                            if (CafeThemeRegistry.INSTANCE.getForID(theme) != null) {
+                                themeStats.merge(theme, 1, Integer::sum);
+                            }
                         }
                     }
                 }
@@ -277,6 +281,8 @@ public class CafeManagerBlockEntity extends BlockEntity implements MenuProvider 
         this.level.sendBlockUpdated(this.worldPosition, this.getBlockState(), this.getBlockState(), 3);
         if (this.level.isClientSide() && this.showingArea) {
             CafeAreaRenderer.addBox(this.worldPosition, this.getAreaBox());
+        } else {
+            cafeAreaRender = null;
         }
     }
 
@@ -288,9 +294,31 @@ public class CafeManagerBlockEntity extends BlockEntity implements MenuProvider 
         this.attemptedCustomers = attemptedCustomers;
     }
 
-    private int getMaxCustomers() {
+    private int getCustomersFromModifiers(int initialCustomers) {
+        int resolvedCustomers = initialCustomers;
+        if (this.cafeModifiers != null) {
+            for (CafeModifier cafeModifier : this.cafeModifiers) {
+                resolvedCustomers = ModifierUtils.getModifierResolvedCustomers(cafeModifier, resolvedCustomers);
+            }
+        }
+        if (this.activeTheme != null) {
+            if (this.activeTheme.modifier() != null) {
+                resolvedCustomers = ModifierUtils.getModifierResolvedCustomers(this.activeTheme.modifier(), resolvedCustomers);
+            }
+        }
+        return (int) Math.floor(resolvedCustomers);
+    }
+
+    private void getMaxCustomers() {
         int stars = this.getStarsFromReputation();
-        return (int) ((stars == 5 ? 40 : ((stars + 1) * 5)) + Mth.randomBetween(this.getLevel().getRandom(), 0, 5));
+        int baseCustomers = (int) ((stars == 5 ? 40 : ((stars + 1) * 5)) + Mth.randomBetween(this.getLevel().getRandom(), 0, 5));
+        int extraCustomers = baseCustomers - getCustomersFromModifiers(baseCustomers);
+        this.maxCustomers = baseCustomers + extraCustomers;
+        if (this.maxCustomers > baseCustomers) {
+            this.spawnIntervalMult = (double) baseCustomers / (baseCustomers + extraCustomers) ;
+        } else {
+            this.spawnIntervalMult = 1.0;
+        }
     }
 
     public BlockPos getLinkedSign() {
@@ -382,6 +410,7 @@ public class CafeManagerBlockEntity extends BlockEntity implements MenuProvider 
             this.attemptedCustomers = 0;
         } else {
             this.dayLastOpened = GeneralUtils.getDay(this.level);
+            this.maxCustomers = null;
             saveDecorData(this.level, this.getBlockPos(), this.getBlockState());
         }
         cafeSignBlockEntity.setOpen(open);
@@ -537,6 +566,7 @@ public class CafeManagerBlockEntity extends BlockEntity implements MenuProvider 
         nbt.putBoolean("showing_area", this.showingArea);
         nbt.putInt("day_last_opened", this.dayLastOpened);
         nbt.putInt("reputation", this.reputation);
+        nbt.putDouble("spawn_interval_mult", this.spawnIntervalMult);
         nbt.putString("cafe_name", this.cafeName);
 
         if (this.menu != null && !this.menu.isEmpty()) {
@@ -560,6 +590,7 @@ public class CafeManagerBlockEntity extends BlockEntity implements MenuProvider 
         this.showingArea = nbt.getBoolean("showing_area");
         this.dayLastOpened = nbt.getInt("day_last_opened");
         this.reputation = nbt.getInt("reputation");
+        this.spawnIntervalMult = nbt.getDouble("spawn_interval_mult");
         if (nbt.contains("cafe_name", Tag.TAG_STRING)) {
             this.cafeName = nbt.getString("cafe_name");
         }
@@ -584,6 +615,7 @@ public class CafeManagerBlockEntity extends BlockEntity implements MenuProvider 
                 CafeAreaRenderer.addBox(this.worldPosition, this.getAreaBox());
             } else {
                 CafeAreaRenderer.removeBox(this.worldPosition);
+                this.cafeAreaRender = null;
             }
         }
     }

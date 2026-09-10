@@ -81,7 +81,7 @@ public class CafeManagerScreen extends AbstractContainerScreen<CafeManagerMenu> 
         }) {
             @Override
             public void renderWidget(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-                guiGraphics.blit(GUI_LOCATION, this.getX(), this.getY(), 224, 80, this.width, this.height, 256, 256);
+                guiGraphics.blit(GUI_LOCATION, this.getX(), this.getY(), 224, this.isHoveredOrFocused() ? 80 + 16 : 80, this.width, this.height, 256, 256);
                 this.setTooltip(Tooltip.create(Component.translatable(CafeManagerScreen.this.menu.getIsCafeOpen() ? "tooltip.cozycafe.cafe_manager.cannot_edit" : "gui.cozycafe.cafe_manager.edit_menu")));
             }
         };
@@ -121,7 +121,7 @@ public class CafeManagerScreen extends AbstractContainerScreen<CafeManagerMenu> 
         }) {
             @Override
             public void renderWidget(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-                guiGraphics.blit(GUI_LOCATION, this.getX(), this.getY(), 176, 80, this.width, this.height, 256, 256);
+                guiGraphics.blit(GUI_LOCATION, this.getX(), this.getY(), 176, this.isHoveredOrFocused() ? 80 + 16 : 80, this.width, this.height, 256, 256);
             }
         };
         toggleEditButton.setTooltip(Tooltip.create(Component.translatable("gui.cozycafe.cafe_manager.edit_name")));
@@ -134,7 +134,7 @@ public class CafeManagerScreen extends AbstractContainerScreen<CafeManagerMenu> 
         }) {
             @Override
             public void renderWidget(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-                guiGraphics.blit(GUI_LOCATION, this.getX(), this.getY(), 224, 112, this.width, this.height, 256, 256);
+                guiGraphics.blit(GUI_LOCATION, this.getX(), this.getY(), 224, this.isHoveredOrFocused() ? 112 + 16 : 112, this.width, this.height, 256, 256);
                 this.setTooltip(Tooltip.create(Component.translatable("gui.cozycafe.cafe_manager.view_stats")));
             }
         };
@@ -146,7 +146,7 @@ public class CafeManagerScreen extends AbstractContainerScreen<CafeManagerMenu> 
         }) {
             @Override
             public void renderWidget(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-                guiGraphics.blit(GUI_LOCATION, this.getX(), this.getY(), 192, 80, this.width, this.height, 256, 256);
+                guiGraphics.blit(GUI_LOCATION, this.getX(), this.getY(), 192, this.isHoveredOrFocused() ? 80 + 16 : 80, this.width, this.height, 256, 256);
             }
         };
         showAreaButton.setTooltip(Tooltip.create(Component.translatable("gui.cozycafe.cafe_manager." + (this.menu.isShowingArea() ? "hide" : "show")+ "_area")));
@@ -160,7 +160,7 @@ public class CafeManagerScreen extends AbstractContainerScreen<CafeManagerMenu> 
         }) {
             @Override
             public void renderWidget(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-                guiGraphics.blit(GUI_LOCATION, this.getX(), this.getY(), 208, 80, this.width, this.height, 256, 256);
+                guiGraphics.blit(GUI_LOCATION, this.getX(), this.getY(), 208, this.isHoveredOrFocused() ? 80 + 16 : 80, this.width, this.height, 256, 256);
             }
         };
         clearCafeButton.setTooltip(Tooltip.create(Component.translatable("gui.cozycafe.cafe_manager.clear_data")));

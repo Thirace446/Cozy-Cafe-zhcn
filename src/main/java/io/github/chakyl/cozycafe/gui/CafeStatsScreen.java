@@ -2,11 +2,11 @@ package io.github.chakyl.cozycafe.gui;
 
 
 import com.mojang.blaze3d.systems.RenderSystem;
-import io.github.chakyl.cozycafe.cafemodifiers.CafeModifier;
 import io.github.chakyl.cozycafe.cafemodifiers.CafeModifierActions;
 import io.github.chakyl.cozycafe.cafemodifiers.CafeModifiers;
 import io.github.chakyl.cozycafe.data.CafeMenuItem;
 import io.github.chakyl.cozycafe.data.CafeMenuItemRegistry;
+import io.github.chakyl.cozycafe.data.CafeModifier;
 import io.github.chakyl.cozycafe.data.CafeTheme;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
@@ -23,7 +23,6 @@ import net.neoforged.api.distmarker.OnlyIn;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import static io.github.chakyl.cozycafe.CozyCafe.loc;
 import static io.github.chakyl.cozycafe.util.GeneralUtils.getMenuItemTooltip;
@@ -68,7 +67,7 @@ public class CafeStatsScreen extends AbstractContainerScreen<CafeStatsMenu> {
         int topPos = this.getGuiTop();
         int offset = topPos + 22;
         cafeModifiers = this.menu.getCafeModifiers();
-        modifierCounts = getModifierCounts(this.menu.getCafeModifiers(), this.menu.getCafeTheme());
+        modifierCounts = getModifierCounts(this.menu.getCafeModifiers());
     }
 
     @Override
@@ -103,12 +102,12 @@ public class CafeStatsScreen extends AbstractContainerScreen<CafeStatsMenu> {
         CafeTheme theme = this.menu.getCafeTheme();
         gfx.drawString(this.font, Component.translatable("gui.cozy_cafe.theme"), left + 20, top + 22, 0xFFFFFF, true);
         if (theme != null) {
-            gfx.renderFakeItem(theme.modifier().getModifierIcon().getDefaultInstance(), left + 22, top + 36);
+            gfx.renderFakeItem(theme.modifier().modifierIcon().getDefaultInstance(), left + 22, top + 36);
             gfx.drawString(this.font, theme.themeName(), left + 42, top + 40, 0xFFFFFF, true);
-            renderModifierActions(gfx, left + 28, top + 58, theme.modifier().getModifierActions());
+            renderModifierActions(gfx, left + 28, top + 58, theme.modifier().modifierActions());
             gfx.blit(GUI_LOCATION, left + 140, top + 36, 176, 32, 16, 16);
             if (pMouseX >= left + 20 && pMouseX < left + MODIFIER_WIDTH + 40 && pMouseY >= top + 34 && pMouseY < top + 54) {
-                final List<Component> tooltipList = getModifierFlavorsTooltips(theme.modifier());
+                final List<Component> tooltipList = getModifierFlavorsTooltips(theme.modifier(), false);
                 gfx.renderTooltip(this.font, tooltipList, Items.AIR.getDefaultInstance().getTooltipImage(), pMouseX, pMouseY);
             }
         } else {
@@ -125,21 +124,21 @@ public class CafeStatsScreen extends AbstractContainerScreen<CafeStatsMenu> {
             int i1 = 0;
             List<String> renderedIds = new ArrayList<>();
             for (CafeModifier modifier : cafeModifiers) {
-                if (renderedIds.contains(modifier.getModifierId())) continue;
+                if (renderedIds.contains(modifier.modifierId())) continue;
                 int j1 = k + 17;
                 if (!this.canScroll(this.cafeModifiers.size()) || i1 >= this.scrollOff && i1 < NUMBER_OF_MODIFIERS + this.scrollOff) {
-                    gfx.renderFakeItem(modifier.getModifierIcon().getDefaultInstance(), l, j1);
-                    gfx.drawString(this.font, modifier.getModifierName(), l + (modifier.getModifierIcon() == Items.AIR ? 0 : 20), j1 + 4, 0xFFFFFF, true);
-                    gfx.drawString(this.font, modifierCounts.get(modifier.getModifierId()) + "/" + modifier.getMaxModifierCount(), l + 99, j1 + 4, 0xFFFFFF, true);
+                    gfx.renderFakeItem(modifier.modifierIcon().getDefaultInstance(), l, j1);
+                    gfx.drawString(this.font, modifier.modifierName(), l + (modifier.modifierIcon() == Items.AIR ? 0 : 20), j1 + 4, 0xFFFFFF, true);
+                    gfx.drawString(this.font, modifierCounts.get(modifier.modifierId()) + "/" + modifier.maxModifierCount(), l + 99, j1 + 4, 0xFFFFFF, true);
 
                     if (pMouseX >= l && pMouseX < l + MODIFIER_WIDTH && pMouseY >= j1 && pMouseY < j1 + MODIFIER_HEIGHT) {
-                        final List<Component> tooltipList = getModifierTooltips(modifier, false);
+                        final List<Component> tooltipList = getModifierTooltips(modifier, modifierCounts.get(modifier.modifierId()));
                         gfx.renderTooltip(this.font, tooltipList, Items.AIR.getDefaultInstance().getTooltipImage(), pMouseX, pMouseY);
                     }
 
                     gfx.blit(GUI_LOCATION, l + 120, j1, 176, 32, 16, 16);
                     if (pMouseX >= l +MODIFIER_WIDTH && pMouseX < l + MODIFIER_WIDTH + 16 && pMouseY >= j1 && pMouseY < j1 + MODIFIER_HEIGHT) {
-                        final List<Component> tooltipList = getModifierFlavorsTooltips(modifier);
+                        final List<Component> tooltipList = getModifierFlavorsTooltips(modifier, false);
                         gfx.renderTooltip(this.font, tooltipList, Items.AIR.getDefaultInstance().getTooltipImage(), pMouseX, pMouseY);
                     }
                     k += MODIFIER_HEIGHT;
@@ -147,7 +146,7 @@ public class CafeStatsScreen extends AbstractContainerScreen<CafeStatsMenu> {
                 } else {
                     ++i1;
                 }
-                renderedIds.add(modifier.getModifierId());
+                renderedIds.add(modifier.modifierId());
             }
         }
 
@@ -155,7 +154,6 @@ public class CafeStatsScreen extends AbstractContainerScreen<CafeStatsMenu> {
 
 
     }
-
     @Override
     public void render(GuiGraphics pGuiGraphics, int pMouseX, int pMouseY, float pPartialTick) {
         this.renderBackground(pGuiGraphics, pMouseX, pMouseY, pPartialTick);

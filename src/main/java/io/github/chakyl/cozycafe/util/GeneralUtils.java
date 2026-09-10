@@ -66,8 +66,12 @@ public class GeneralUtils {
     }
 
     public static @NotNull List<Component> getMenuItemTooltip(ItemStack itemStack, CafeMenuItem cafeMenuItem) {
-        List<Component> tooltipList = new ArrayList<>(getTooltipFromItem(Minecraft.getInstance(), itemStack));
-        tooltipList.add(Component.literal(Component.translatable("gui.cozycafe.menu_selector.price", cafeMenuItem.price()).getString() + " | "+ Component.translatable("category.cozycafe." + cafeMenuItem.category().toString().toLowerCase()).getString()));
+        return getMenuItemTooltip(getTooltipFromItem(Minecraft.getInstance(), itemStack), itemStack, cafeMenuItem);
+    }
+
+    public static @NotNull List<Component> getMenuItemTooltip(List<Component> currentTooltips, ItemStack itemStack, CafeMenuItem cafeMenuItem) {
+        List<Component> tooltipList = new ArrayList<>(currentTooltips);
+        tooltipList.add(Component.literal(Component.translatable("gui.cozycafe.menu_selector.price", cafeMenuItem.price()).getString() + " | " + Component.translatable("category.cozycafe." + cafeMenuItem.category().toString().toLowerCase()).getString()));
         if (!cafeMenuItem.flavors().isEmpty()) {
             tooltipList.add(Component.translatable("gui.cozycafe.menu_selector.flavors", cafeMenuItem.flavors().stream()
                     .map(flavor -> Component.translatable("flavor.cozycafe." + flavor).getString())
@@ -119,18 +123,18 @@ public class GeneralUtils {
                 VertexConsumer consumer = buffer.getBuffer(renderType);
 
                 minecraft.getBlockRenderer().getModelRenderer().tesselateBlock(
-                                blockEnt.getLevel(),
-                                model,
-                                blockState,
-                                blockEnt.getBlockPos(),
-                                poseStack,
-                                consumer,
-                                false,
-                                random,
-                                42L,
-                                overlay,
-                                modelData,
-                                renderType
+                        blockEnt.getLevel(),
+                        model,
+                        blockState,
+                        blockEnt.getBlockPos(),
+                        poseStack,
+                        consumer,
+                        false,
+                        random,
+                        42L,
+                        overlay,
+                        modelData,
+                        renderType
                 );
             }
 
@@ -157,7 +161,7 @@ public class GeneralUtils {
         }
     }
 
-    public static BakedModel getFoodModel(ItemStack foodItem){
+    public static BakedModel getFoodModel(ItemStack foodItem) {
         if (foodItem.getItem() instanceof BlockItem blockItem) {
             BlockState foodBlockState = blockItem.getBlock().defaultBlockState();
             return Minecraft.getInstance().getBlockRenderer().getBlockModel(foodBlockState);

@@ -136,6 +136,7 @@ public final class CozyRegistry {
 
         public static final DeferredHolder<Item, Item> SERVING_PLATE = register("serving_plate", () -> new ServingPlateItem(new Item.Properties().stacksTo(8)));
         public static final DeferredHolder<Item, Item> DIRTY_SERVING_PLATE = register("dirty_serving_plate", () -> new DirtyServingPlateItem(new Item.Properties().stacksTo(8)));
+        public static final DeferredHolder<Item, Item> CAFE_CATALOG = register("cafe_catalog", () -> new Item(new Item.Properties().stacksTo(1)));
 
         /**
          * Creates a registry object for a block item and adds it to the mod creative tab
@@ -192,6 +193,7 @@ public final class CozyRegistry {
                     output.accept(BlockRegistry.PLATING_STATION.get());
                     output.accept(ItemRegistry.SERVING_PLATE.get());
                     output.accept(ItemRegistry.DIRTY_SERVING_PLATE.get());
+                    output.accept(ItemRegistry.CAFE_CATALOG.get());
                 })
                 .build()
         );
