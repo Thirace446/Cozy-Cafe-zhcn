@@ -3,8 +3,6 @@ package io.github.chakyl.cozycafe.data;
 import com.google.common.base.Preconditions;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import io.github.chakyl.cozycafe.cafemodifiers.CafeModifier;
-import io.github.chakyl.cozycafe.cafemodifiers.CafeModifiers;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.ComponentSerialization;
 import net.minecraft.resources.ResourceLocation;

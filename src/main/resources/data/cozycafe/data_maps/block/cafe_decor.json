@@ -1,108 +1,75 @@
 {
   "values": {
     "minecraft:cake": {
-      "decor_themes": [
-        "bakery",
-        "diner"
-      ],
-      "modifiers": [
-        {
-          "modifier_id": "sweet_tooth",
-          "modifier_name": {
-            "translate": "modifier.cozycafe.sweet_tooth"
-          },
-          "modifier_icon": "minecraft:cake",
-          "type": "decor",
-          "flavors_impacted": [
-            "sweet",
-            "bread"
-          ],
-          "max_modifier_count": 3,
-          "modifier_actions": {
-            "price": {
-              "value": 1.2,
-              "action": "multiply"
-            },
-            "patience": {
-              "value": 0.8,
-              "action": "multiply"
-            }
-          }
-        }
-      ]
+      "decor_themes": ["bakery", "diner"],
+      "modifiers": ["sweet_tooth"]
     },
     "#minecraft:candles": {
-      "decor_themes": [
-        "fancy",
-        "bar"
-      ],
-      "modifiers": [
-        {
-          "modifier_id": "romantic",
-          "modifier_name": {
-            "translate": "modifier.cozycafe.romantic"
-          },
-          "modifier_icon": "minecraft:red_candle",
-          "type": "decor",
-          "max_modifier_count": 5,
-          "modifier_actions": {
-            "tip": {
-              "value": 1.05,
-              "action": "multiply"
-            },
-            "patience": {
-              "value": 1.05,
-              "action": "multiply"
-            }
-          }
-        }
-      ]
+      "max_usages": 5,
+      "decor_name": {
+        "translate": "decor.cozycafe.candles"
+      },
+      "decor_themes": ["fancy", "bar"],
+      "modifiers": ["romantic"]
     },
     "#minecraft:flower_pots": {
-      "modifiers": [
-        {
-          "modifier_id": "blooming",
-          "modifier_icon": "minecraft:sunflower",
-          "modifier_name": {
-            "translate": "modifier.cozycafe.blooming"
-          },
-          "type": "decor",
-          "max_modifier_count": 4,
-          "modifier_actions": {
-            "customer_impact": {
-              "value": 1.05,
-              "action": "multiply"
-            },
-            "patience": {
-              "value": 1.05,
-              "action": "multiply"
-            }
-          }
-        }
-      ]
+      "decor_name": {
+        "translate": "decor.cozycafe.flower_pot"
+      },
+      "modifiers": ["blooming"]
     },
     "#minecraft:flowers": {
-      "modifiers": [
-        {
-          "modifier_id": "blooming",
-          "modifier_icon": "minecraft:sunflower",
-          "modifier_name": {
-            "translate": "modifier.cozycafe.blooming"
-          },
-          "type": "decor",
-          "max_modifier_count": 4,
-          "modifier_actions": {
-            "customer_impact": {
-              "value": 1.05,
-              "action": "multiply"
-            },
-            "patience": {
-              "value": 1.05,
-              "action": "multiply"
-            }
-          }
-        }
-      ]
+      "decor_name": {
+        "translate": "decor.cozycafe.flowers"
+      },
+      "modifiers": ["blooming"]
+    },
+    "minecraft:campfire": {
+      "max_usages": 1,
+      "decor_themes": ["cozy"],
+      "modifiers": ["hearth"]
+    },
+    "minecraft:jukebox": {
+      "max_usages": 1,
+      "decor_themes": ["fancy", "bar", "diner"],
+      "modifiers": ["entertaining"]
+    },
+    "minecraft:composter": {
+      "decor_themes": ["casual", "fast_food"],
+      "modifiers": ["treehugger"]
+    },
+    "minecraft:enchanting_table": {
+      "max_usages": 1,
+      "modifiers": ["magical"]
+    },
+    "minecraft:amethyst_cluster": {
+      "modifiers": ["magical"]
+    },
+    "minecraft:lectern": {
+      "max_usages": 1,
+      "decor_themes": ["fancy", "cozy"]
+    },
+    "minecraft:decorated_pot": {
+      "decor_themes": ["casual"],
+      "modifiers": ["simple"]
+    },
+    "minecraft:carved_pumpkin": {
+      "modifiers": ["spooky"]
+    },
+    "minecraft:jack_o_lantern": {
+      "modifiers": ["spooky"]
+    },
+    "minecraft:bell": {
+      "max_usages": 1,
+      "decor_themes": ["fancy", "diner"],
+      "modifiers": ["entertaining", "gaudy"]
+    },
+    "minecraft:gold_block": {
+      "decor_themes": ["fancy"],
+      "modifiers": ["gaudy"]
+    },
+    "#create:table_cloths": {
+      "decor_themes": ["casual", "cozy", "diner"]
     }
   }
 }

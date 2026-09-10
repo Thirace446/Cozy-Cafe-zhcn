@@ -1,6 +1,7 @@
 package io.github.chakyl.cozycafe.cafemodifiers;
 
 import com.mojang.serialization.Codec;
+import io.github.chakyl.cozycafe.data.CafeModifier;
 
 import java.util.ArrayList;
 import java.util.List;
